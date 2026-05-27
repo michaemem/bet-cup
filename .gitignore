@@ -31,3 +31,4 @@ pnpm-debug.log*
 # cursor files
 .cursor/skills/10x*
 .cursor/rules/10x*
+.cursor/.10x-cli-manifest.json
