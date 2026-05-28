@@ -68,6 +68,25 @@ const astroConfig = tseslint.config({
   },
 });
 
+// Node.js helper scripts (CLI checks, build helpers) live in `scripts/` and run
+// under Node directly, not in the React/Astro browser context. They legitimately
+// use `console` / `process` globals and emit log lines as their primary output.
+const scriptsConfig = tseslint.config({
+  files: ["scripts/**/*.{js,mjs,cjs}"],
+  languageOptions: {
+    globals: {
+      console: "readonly",
+      process: "readonly",
+      Buffer: "readonly",
+      __dirname: "readonly",
+      __filename: "readonly",
+    },
+  },
+  rules: {
+    "no-console": "off",
+  },
+});
+
 export default tseslint.config(
   includeIgnoreFile(gitignorePath),
   baseConfig,
@@ -75,5 +94,6 @@ export default tseslint.config(
   eslintPluginAstro.configs["flat/recommended"],
   ...eslintPluginAstro.configs["flat/jsx-a11y-recommended"],
   astroConfig,
+  scriptsConfig,
   eslintPluginPrettier,
 );
