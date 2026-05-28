@@ -150,25 +150,42 @@ Route protection is handled in `src/middleware.ts`. Add paths to the `PROTECTED_
 
 ## Deployment
 
-This project deploys to [Cloudflare Workers](https://workers.cloudflare.com/).
+This project deploys to [Cloudflare Workers](https://workers.cloudflare.com/) as the Worker named `betcup` (URL: `https://betcup.<your-handle>.workers.dev`). See [context/changes/deployment/deployment-plan.md](./context/changes/deployment/deployment-plan.md) for the full phased rollout.
 
-1. Build the project:
+### Manual deploy
 
 ```bash
 npm run build
-```
-
-2. Deploy with Wrangler:
-
-```bash
 npx wrangler deploy
 ```
 
-Set `SUPABASE_URL` and `SUPABASE_KEY` as secrets in your Cloudflare dashboard or via `npx wrangler secret put`.
+Set `SUPABASE_URL` and `SUPABASE_KEY` (Supabase **anon** key — `@supabase/ssr` uses anon + RLS, never service-role) as Workers Secrets via `npx wrangler secret put`.
+
+### Auto deploy
+
+Push to `main` triggers `cloudflare/wrangler-action@v3` in `.github/workflows/ci.yml` after `lint` + `check:wrangler` + `build` pass.
+
+### Rollback
+
+```bash
+npx wrangler deployments list           # show deploy history
+npx wrangler rollback [DEPLOYMENT_ID]   # revert to a named deploy
+```
+
+Note: Supabase migrations do not roll back with the Worker; coordinate DB schema rollback separately.
 
 ## CI
 
-GitHub Actions runs lint + build on every push and PR to `master`. Configure `SUPABASE_URL` and `SUPABASE_KEY` as repository secrets in GitHub for the build step.
+GitHub Actions runs `lint` + `check:wrangler` + `build` on every push and PR to `main`, then auto-deploys to Cloudflare Workers on push to `main` only.
+
+Required GitHub repository secrets:
+
+| Secret | Used by | Source |
+| --- | --- | --- |
+| `SUPABASE_URL` | build step | Supabase dashboard → Settings → API → Project URL |
+| `SUPABASE_KEY` | build step | Supabase dashboard → Settings → API → `anon` public key |
+| `CLOUDFLARE_API_TOKEN` | deploy step | Cloudflare dash → My Profile → API Tokens → "Edit Cloudflare Workers" template |
+| `CLOUDFLARE_ACCOUNT_ID` | deploy step | Cloudflare dash → any Worker → right sidebar |
 
 ## License
 

@@ -16,9 +16,88 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run check:wrangler
       - run: npx astro sync
       - run: npm run lint
       - run: npm run build
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+
+  smoke:
+    needs: ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx astro sync
+      - run: npm run build
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      - name: Materialize .dev.vars for wrangler dev
+        run: |
+          cat > .dev.vars <<'EOF'
+          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}
+          EOF
+      - name: Boot wrangler dev against build artifact and smoke-test
+        run: |
+          set -euo pipefail
+          npx wrangler dev --port 8788 --ip 127.0.0.1 > wrangler-dev.log 2>&1 &
+          WRANGLER_PID=$!
+          echo "wrangler dev PID: $WRANGLER_PID"
+          trap "kill $WRANGLER_PID 2>/dev/null || true" EXIT
+          # Wait up to 60s for the server to come up.
+          for i in $(seq 1 60); do
+            if curl -sf -o /dev/null http://127.0.0.1:8788/auth/signin; then
+              echo "wrangler dev ready after ${i}s"
+              break
+            fi
+            if [ "$i" = "60" ]; then
+              echo "FAIL: wrangler dev did not respond within 60s"
+              cat wrangler-dev.log
+              exit 1
+            fi
+            sleep 1
+          done
+          # Test 1: /auth/signin renders 200.
+          curl -sfI http://127.0.0.1:8788/auth/signin > /dev/null
+          echo "OK: /auth/signin returned 200"
+          # Test 2: /dashboard redirects to /auth/signin when unauthenticated.
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8788/dashboard)
+          if [ "$STATUS" != "302" ]; then
+            echo "FAIL: /dashboard expected 302, got $STATUS"
+            cat wrangler-dev.log
+            exit 1
+          fi
+          echo "OK: /dashboard redirected (302)"
+
+  deploy:
+    needs: [ci, smoke]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-prod
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx astro sync
+      - run: npm run build
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy

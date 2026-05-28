@@ -15,7 +15,8 @@ BetCup is a private football-tournament prediction pool — Astro 6 SSR + React 
 
 - `npm run dev` — dev server (Cloudflare workerd).
 - `npm run lint` — ESLint, strict-type-checked. **CI gate.**
-- `npm run build` — production SSR build. CI: lint + build on push/PR to `master` (`@.github/workflows/ci.yml`).
+- `npm run build` — production SSR build. CI: lint + `check:wrangler` + build on push/PR to `main`; auto-deploy via `cloudflare/wrangler-action` on push to `main` only (`@.github/workflows/ci.yml`).
+- `npm run check:wrangler` — guards the `nodejs_compat` flag in `wrangler.jsonc`. Runs in pre-commit (lint-staged) on wrangler.jsonc changes and in CI. Removing the flag silently breaks Supabase SSR in production.
 - `npx supabase start` — local Supabase stack (Docker required); setup: `@README.md`.
 
 No test suite yet — add one (e.g., Vitest) before the first feature merges.
@@ -38,10 +39,29 @@ No test suite yet — add one (e.g., Vitest) before the first feature merges.
 
 ## Commit & pull request guidelines
 
-Only the initial commit exists. Adopt a convention (Conventional Commits is a reasonable default) and document it here once several commits land. PRs must pass `lint` + `build`. Set `SUPABASE_URL` / `SUPABASE_KEY` as GitHub repo secrets for the build.
+Adopt Conventional Commits as the default convention. PRs must pass `lint` + `check:wrangler` + `build`. Required GitHub repo secrets: `SUPABASE_URL`, `SUPABASE_KEY` (build), `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` (deploy on push to `main`).
 
 ## Configuration
 
-- Node version per `@.nvmrc`; CI pins Node 22 (`@.github/workflows/ci.yml`).
+- Node version per `@.nvmrc`; `engines.node` enforces `>=22.14.0 <23.0.0`; CI pins Node 22 (`@.github/workflows/ci.yml`).
 - Local env: copy `.env.example` to `.env` (Node) and `.dev.vars` (Cloudflare local). Both gitignored.
-- Cloudflare deploy: `npx wrangler deploy`; production secrets via `npx wrangler secret put`.
+- MCP servers wired in `@.cursor/mcp.json`: `cloudflare-docs` (read-only, public) and `cloudflare-observability` (Workers Logs read-only; OAuths on first use against your Cloudflare account).
+- Cloudflare deploy: auto on push to `main`; manual fallback `npx wrangler deploy`; production secrets via `npx wrangler secret put`.
+- GitHub Actions secrets required: `SUPABASE_URL`, `SUPABASE_KEY` (build-time), `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` (deploy-time).
+- Worker name: `betcup`. Production URL: `https://betcup.betcup.workers.dev`.
+
+## Rollback runbook
+
+- `npx wrangler deployments list` — show deploy history (id + commit + timestamp).
+- `npx wrangler rollback [DEPLOYMENT_ID]` — revert to the named deploy in seconds. Omitting the id rolls back to the previous version.
+- **Supabase migrations do NOT roll back with the Worker.** If the rollback crosses a Supabase migration boundary, coordinate the DB schema rollback separately (`supabase db reset` to the pre-breaking migration). Treat any cross-boundary rollback as a manual operation.
+
+## Manual approval gates (never autonomous)
+
+The following are never to be executed by an agent without explicit human approval:
+
+- Rotating `SUPABASE_KEY` (any side: Workers Secret, GitHub Secret, local `.dev.vars`).
+- Dropping a Supabase table, or applying a migration that drops/renames columns.
+- Upgrading `wrangler` across a major version boundary.
+- Any change to `wrangler.jsonc` `compatibility_flags` or `compatibility_date`.
+- Rotating `CLOUDFLARE_API_TOKEN` or changing its scope.
