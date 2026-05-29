@@ -65,6 +65,11 @@ const astroConfig = tseslint.config({
     "astro/no-set-html-directive": "error",
     "astro/no-unused-css-selector": "warn",
     "astro/prefer-class-list-directive": "warn",
+    // astro-eslint-parser hoists frontmatter into a synthetic function, so a
+    // top-level `return Astro.redirect(...)` has no parent node and crashes this
+    // rule. Astro's own ESLint config disables it for .astro files for the same
+    // reason. See https://github.com/withastro/prettier-plugin-astro/issues/451
+    "@typescript-eslint/no-misused-promises": "off",
   },
 });
 

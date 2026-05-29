@@ -566,38 +566,38 @@ End-to-end manual walk-through that exercises every phase together:
 
 #### Automated
 
-- [x] 1.1 Migration applies cleanly: `npx supabase db reset` completes without error
-- [x] 1.2 Types generate without diagnostics: `npm run db:types` exits 0 and produces a non-empty `src/db/database.types.ts`
-- [x] 1.3 Type check passes: `npx astro sync && npm run lint` is clean
-- [x] 1.4 Generated `supabase/seed.sql` is NOT tracked by git after `npm run db:start`
-- [x] 1.5 Template generator fails loudly when `.env` is missing: `unset ADMIN_EMAIL && node scripts/seed-template.mjs` exits non-zero
-- [x] 1.6 Admin user has `{participant, admin}` in `user_roles`; second manually created user has `{participant}` only
+- [x] 1.1 Migration applies cleanly: `npx supabase db reset` completes without error — 6428ccd
+- [x] 1.2 Types generate without diagnostics: `npm run db:types` exits 0 and produces a non-empty `src/db/database.types.ts` — 6428ccd
+- [x] 1.3 Type check passes: `npx astro sync && npm run lint` is clean — 6428ccd
+- [x] 1.4 Generated `supabase/seed.sql` is NOT tracked by git after `npm run db:start` — 6428ccd
+- [x] 1.5 Template generator fails loudly when `.env` is missing: `unset ADMIN_EMAIL && node scripts/seed-template.mjs` exits non-zero — 6428ccd
+- [x] 1.6 Admin user has `{participant, admin}` in `user_roles`; second manually created user has `{participant}` only — 6428ccd
 
 #### Manual
 
-- [ ] 1.7 Supabase Studio shows `profiles` + `user_roles` with RLS enabled
-- [ ] 1.8 `SELECT * FROM public.profiles_public` as anon returns all rows (no `legal_name`)
-- [ ] 1.9 `SELECT legal_name FROM public.profiles` as anon returns zero rows
-- [ ] 1.10 README's "Production admin bootstrap" subsection contains the exact operator SQL
+- [x] 1.7 Supabase Studio shows `profiles` + `user_roles` with RLS enabled — 6428ccd
+- [x] 1.8 `SELECT * FROM public.profiles_public` as anon returns all rows (no `legal_name`) — 6428ccd
+- [x] 1.9 `SELECT legal_name FROM public.profiles` as anon returns zero rows — 6428ccd
+- [x] 1.10 README's "Production admin bootstrap" subsection contains the exact operator SQL — 6428ccd
 
 ### Phase 2: App Auth-Gate Refactor
 
 #### Automated
 
-- [ ] 2.1 Type check passes: `npx astro sync && npm run lint` is clean
-- [ ] 2.2 Build passes: `npm run build` succeeds
-- [ ] 2.3 `check:wrangler` passes: `npm run check:wrangler` exits 0
+- [x] 2.1 Type check passes: `npx astro sync && npm run lint` is clean
+- [x] 2.2 Build passes: `npm run build` succeeds
+- [x] 2.3 `check:wrangler` passes: `npm run check:wrangler` exits 0
 
 #### Manual
 
-- [ ] 2.4 Unauthed visit to `/` redirects to `/auth/signin`
-- [ ] 2.5 Unauthed visit to any random path redirects to `/auth/signin`
-- [ ] 2.6 Unauthed visit to `/auth/signin` returns 200 with the form
-- [ ] 2.7 Sign-in with admin credentials redirects to `/dashboard` showing "Welcome, Admin" (displayName, not email local-part)
-- [ ] 2.8 Authed visit to `/auth/signin` redirects to `/dashboard`
-- [ ] 2.9 Authed visit to `/` redirects to `/dashboard`
-- [ ] 2.10 Security headers (HSTS, CSP, etc.) still set on every response
-- [ ] 2.11 Sign-out from `/dashboard` clears session and lands directly on `/auth/signin` (single hop, no intermediate `/` redirect)
+- [x] 2.4 Unauthed visit to `/` redirects to `/auth/signin`
+- [x] 2.5 Unauthed visit to any random path redirects to `/auth/signin`
+- [x] 2.6 Unauthed visit to `/auth/signin` returns 200 with the form
+- [x] 2.7 Sign-in with admin credentials redirects to `/dashboard` showing "Welcome, Admin" (displayName, not email local-part)
+- [x] 2.8 Authed visit to `/auth/signin` redirects to `/dashboard`
+- [x] 2.9 Authed visit to `/` redirects to `/dashboard`
+- [x] 2.10 Security headers (HSTS, CSP, etc.) still set on every response
+- [x] 2.11 Sign-out from `/dashboard` clears session and lands directly on `/auth/signin` (single hop, no intermediate `/` redirect)
 
 ### Phase 3: Self-Signup Removal
 
