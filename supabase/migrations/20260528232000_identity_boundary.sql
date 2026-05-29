@@ -72,13 +72,19 @@ comment on view public.profiles_public is
 
 grant select on public.profiles_public to authenticated, anon;
 
--- 6. Role helpers. SECURITY INVOKER so they read under the caller's RLS and are
---    safe to call from RLS policies without recursion.
+-- 6. Role helpers. SECURITY DEFINER (with a locked search_path) so they read
+--    user_roles WITHOUT re-applying RLS. This is mandatory: these helpers are
+--    called from the user_roles RLS policy itself, so a SECURITY INVOKER helper
+--    would re-enter the same policy and recurse infinitely (stack depth
+--    exceeded) for any non-admin caller. Each helper only ever reads rows for
+--    the caller's own auth.uid() and returns a boolean / the caller's roles, so
+--    bypassing RLS here leaks nothing.
 create function public.is_admin()
   returns boolean
   language sql
   stable
-  security invoker
+  security definer
+  set search_path = ''
 as $$
   select exists (
     select 1 from public.user_roles
@@ -90,7 +96,8 @@ create function public.is_participant()
   returns boolean
   language sql
   stable
-  security invoker
+  security definer
+  set search_path = ''
 as $$
   select exists (
     select 1 from public.user_roles
@@ -102,7 +109,8 @@ create function public.current_user_roles()
   returns public.user_role[]
   language sql
   stable
-  security invoker
+  security definer
+  set search_path = ''
 as $$
   select array_agg(role) from public.user_roles where user_id = auth.uid();
 $$;
