@@ -584,20 +584,20 @@ End-to-end manual walk-through that exercises every phase together:
 
 #### Automated
 
-- [x] 2.1 Type check passes: `npx astro sync && npm run lint` is clean
-- [x] 2.2 Build passes: `npm run build` succeeds
-- [x] 2.3 `check:wrangler` passes: `npm run check:wrangler` exits 0
+- [x] 2.1 Type check passes: `npx astro sync && npm run lint` is clean — 22e33db
+- [x] 2.2 Build passes: `npm run build` succeeds — 22e33db
+- [x] 2.3 `check:wrangler` passes: `npm run check:wrangler` exits 0 — 22e33db
 
 #### Manual
 
-- [x] 2.4 Unauthed visit to `/` redirects to `/auth/signin`
-- [x] 2.5 Unauthed visit to any random path redirects to `/auth/signin`
-- [x] 2.6 Unauthed visit to `/auth/signin` returns 200 with the form
-- [x] 2.7 Sign-in with admin credentials redirects to `/dashboard` showing "Welcome, Admin" (displayName, not email local-part)
-- [x] 2.8 Authed visit to `/auth/signin` redirects to `/dashboard`
-- [x] 2.9 Authed visit to `/` redirects to `/dashboard`
-- [x] 2.10 Security headers (HSTS, CSP, etc.) still set on every response
-- [x] 2.11 Sign-out from `/dashboard` clears session and lands directly on `/auth/signin` (single hop, no intermediate `/` redirect)
+- [x] 2.4 Unauthed visit to `/` redirects to `/auth/signin` — 22e33db
+- [x] 2.5 Unauthed visit to any random path redirects to `/auth/signin` — 22e33db
+- [x] 2.6 Unauthed visit to `/auth/signin` returns 200 with the form — 22e33db
+- [x] 2.7 Sign-in with admin credentials redirects to `/dashboard` showing "Welcome, Admin" (displayName, not email local-part) — 22e33db
+- [x] 2.8 Authed visit to `/auth/signin` redirects to `/dashboard` — 22e33db
+- [x] 2.9 Authed visit to `/` redirects to `/dashboard` — 22e33db
+- [x] 2.10 Security headers (HSTS, CSP, etc.) still set on every response — 22e33db
+- [x] 2.11 Sign-out from `/dashboard` clears session and lands directly on `/auth/signin` (single hop, no intermediate `/` redirect) — 22e33db
 
 ### Phase 3: Self-Signup Removal
 
