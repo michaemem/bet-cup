@@ -10,7 +10,12 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
-    "check:wrangler": "node scripts/check-wrangler-compat.mjs"
+    "check:wrangler": "node scripts/check-wrangler-compat.mjs",
+    "db:start": "node scripts/seed-template.mjs && npx supabase start",
+    "db:stop": "npx supabase stop",
+    "db:migration:new": "npx supabase migration new",
+    "db:types": "npx supabase gen types typescript --local > src/db/database.types.ts",
+    "db:reset": "node scripts/seed-template.mjs && npx supabase db reset"
   },
   "engines": {
     "node": ">=22.14.0 <23.0.0"
@@ -40,6 +45,7 @@
   "devDependencies": {
     "@eslint/compat": "^2.0.3",
     "@eslint/js": "^9.29.0",
+    "dotenv": "^16.6.1",
     "eslint": "^9.29.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-astro": "^1.7.0",

@@ -55,6 +55,11 @@ npm run dev
 - `npm run lint` - Run ESLint with type-checked rules
 - `npm run lint:fix` - Auto-fix ESLint issues
 - `npm run format` - Run Prettier
+- `npm run db:start` - Template the local admin seed, then start the Supabase stack
+- `npm run db:stop` - Stop the local Supabase stack
+- `npm run db:migration:new <name>` - Scaffold a new migration file
+- `npm run db:types` - Regenerate `src/db/database.types.ts` from the local DB
+- `npm run db:reset` - Re-template the seed and reset the local DB to migrations + seed
 
 ## Project Structure
 
@@ -111,7 +116,38 @@ npx supabase stop
 
 The local Studio UI is available at `http://localhost:54323`.
 
-No database tables or migrations are required — this project uses Supabase Auth's built-in `auth.users` table only.
+The schema (identity tables, RLS, role helpers, and the admin-seeding trigger) lives in `supabase/migrations/` and is applied automatically by `supabase start` / `npm run db:reset`. After a migration changes, regenerate the typed `Database` definition with `npm run db:types` (writes `src/db/database.types.ts`, which is committed so CI doesn't need the Supabase CLI).
+
+### Local admin seed
+
+BetCup has no self-registration: the single admin is seeded into the local database, and the `handle_new_user` trigger promotes them to the `admin` role automatically.
+
+1. Set the admin credentials in your `.env`:
+
+```
+ADMIN_EMAIL=admin@betcup.local
+ADMIN_PASSWORD=change-me-locally
+```
+
+2. Start the stack with the wrapper script (it templates `supabase/seed.sql` from `supabase/seed.sql.template` using those vars, then boots Supabase):
+
+```bash
+npm run db:start
+```
+
+The generated `supabase/seed.sql` is gitignored — only the template is committed, so no password ever lands in the repo. The seeded admin ends up with both `participant` and `admin` rows in `user_roles`; any other user created later gets `participant` only.
+
+### Production admin bootstrap
+
+In a hosted project the admin is created manually, but the same trigger handles role assignment. Order matters — the trigger reads `app.admin_email` at insert time:
+
+1. Open the Supabase Studio **SQL editor** for the project and run:
+
+```sql
+ALTER DATABASE postgres SET app.admin_email = '<real-admin-email>';
+```
+
+2. Go to **Authentication → Add user** and create the user with that exact email. The `handle_new_user` trigger fires on insert and grants the `admin` role in addition to `participant`.
 
 ### Using a cloud Supabase project instead
 

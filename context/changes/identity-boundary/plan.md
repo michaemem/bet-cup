@@ -566,12 +566,12 @@ End-to-end manual walk-through that exercises every phase together:
 
 #### Automated
 
-- [ ] 1.1 Migration applies cleanly: `npx supabase db reset` completes without error
-- [ ] 1.2 Types generate without diagnostics: `npm run db:types` exits 0 and produces a non-empty `src/db/database.types.ts`
-- [ ] 1.3 Type check passes: `npx astro sync && npm run lint` is clean
-- [ ] 1.4 Generated `supabase/seed.sql` is NOT tracked by git after `npm run db:start`
-- [ ] 1.5 Template generator fails loudly when `.env` is missing: `unset ADMIN_EMAIL && node scripts/seed-template.mjs` exits non-zero
-- [ ] 1.6 Admin user has `{participant, admin}` in `user_roles`; second manually created user has `{participant}` only
+- [x] 1.1 Migration applies cleanly: `npx supabase db reset` completes without error
+- [x] 1.2 Types generate without diagnostics: `npm run db:types` exits 0 and produces a non-empty `src/db/database.types.ts`
+- [x] 1.3 Type check passes: `npx astro sync && npm run lint` is clean
+- [x] 1.4 Generated `supabase/seed.sql` is NOT tracked by git after `npm run db:start`
+- [x] 1.5 Template generator fails loudly when `.env` is missing: `unset ADMIN_EMAIL && node scripts/seed-template.mjs` exits non-zero
+- [x] 1.6 Admin user has `{participant, admin}` in `user_roles`; second manually created user has `{participant}` only
 
 #### Manual
 

@@ -22,6 +22,9 @@ pnpm-debug.log*
 .dev.vars
 .wrangler/
 
+# generated supabase seed (template is committed; generated file is not)
+supabase/seed.sql
+
 # macOS-specific files
 .DS_Store
 

@@ -89,6 +89,9 @@ const scriptsConfig = tseslint.config({
 
 export default tseslint.config(
   includeIgnoreFile(gitignorePath),
+  // Generated Supabase types: committed (so CI needs no Supabase CLI) but never
+  // hand-edited, so they are exempt from lint/format rules.
+  { ignores: ["src/db/database.types.ts"] },
   baseConfig,
   reactConfig,
   eslintPluginAstro.configs["flat/recommended"],
