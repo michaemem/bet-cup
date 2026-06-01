@@ -56,6 +56,7 @@ with new_admin as (
     '',
     ''
   )
+  on conflict do nothing
   returning id, email
 )
 insert into auth.identities (
@@ -75,4 +76,5 @@ select
   now(),
   now(),
   now()
-from new_admin;
+from new_admin
+on conflict do nothing;

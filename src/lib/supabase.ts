@@ -39,10 +39,17 @@ export async function loadProfile(supabase: SupabaseClient<Database>, userId: st
     .maybeSingle();
 
   if (error || !profile) {
+    // The Phase 1 trigger guarantees a row for every authed user, so this
+    // indicates a query failure or a race/inconsistency worth surfacing.
+    console.error("[loadProfile] profile lookup failed", { userId, error });
     return null;
   }
 
-  const { data: roleRows } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+  const { data: roleRows, error: rolesError } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+
+  if (rolesError) {
+    console.error("[loadProfile] roles lookup failed", { userId, error: rolesError });
+  }
 
   return {
     id: profile.id,

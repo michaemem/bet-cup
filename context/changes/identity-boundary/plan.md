@@ -558,6 +558,15 @@ End-to-end manual walk-through that exercises every phase together:
 - Existing handlers to retrofit: `src/pages/api/auth/{signin,signout}.ts`.
 - CI smoke contract to preserve: `.github/workflows/ci.yml:34-78`.
 
+## Addenda (post-implementation)
+
+These are deviations from the plan-as-written, captured during the `/10x-impl-review` triage on 2026-06-01. The plan body above is left intact; this section is the authoritative record of where the shipped code diverges.
+
+- **Role helpers are `SECURITY DEFINER`, not `SECURITY INVOKER`** (commit `a2f7c15`). The plan (Phase 1 §6–8 and Critical Implementation Details) specified `SECURITY INVOKER`, but `is_admin()`/`is_participant()`/`current_user_roles()` are called from the `user_roles` RLS policy itself — an invoker helper re-enters that policy and recurses infinitely. They are now `SECURITY DEFINER` with a locked `search_path = ''`, reading only `auth.uid()`'s own rows. The migration's inline comment documents the rationale. No privilege-escalation surface.
+- **`profiles_public` SELECT revoked from `anon`** (impl-review F1; migration `20260601180000_revoke_profiles_public_anon.sql`). The original migration granted SELECT to `authenticated, anon`; the `anon` grant exposed display names via PostgREST independent of the default-deny middleware. Revoked to match the plan narrative (§Critical Implementation Details) and the private-by-default PRD posture. `authenticated` retains SELECT.
+- **Orphaned scaffold removed**: `src/components/Topbar.astro` and `src/components/Welcome.astro` were deleted in Phase 3 (`562bbbb`). They were starter-template leftovers — `Welcome` was only imported by the pre-refactor `index.astro`, `Topbar` only by `Welcome` (and it linked to the now-deleted `/auth/signup`). Not in the original file list but in scope of the signup-removal intent.
+- **`loadProfile` uses two queries**, not the single `array_agg` join the plan described (Phase 2 §3). Functionally equivalent; revisit if a downstream slice copies the per-row shape (impl-review F7).
+
 ## Progress
 
 > Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles. See `references/progress-format.md`.

@@ -25,10 +25,16 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
+// Escape single quotes so values are safe inside the SQL string literals
+// they substitute into (the template wraps each placeholder in '...').
+const sqlEscape = (value) => String(value).replaceAll("'", "''");
+
 const template = readFileSync(templatePath, "utf8");
 const seed =
   "-- GENERATED FROM supabase/seed.sql.template — DO NOT EDIT\n" +
-  template.replaceAll("{{ADMIN_EMAIL}}", ADMIN_EMAIL).replaceAll("{{ADMIN_PASSWORD}}", ADMIN_PASSWORD);
+  template
+    .replaceAll("{{ADMIN_EMAIL}}", sqlEscape(ADMIN_EMAIL))
+    .replaceAll("{{ADMIN_PASSWORD}}", sqlEscape(ADMIN_PASSWORD));
 
 writeFileSync(outputPath, seed);
 console.log(`[seed-template] Wrote ${outputPath} for admin ${ADMIN_EMAIL}.`);

@@ -7,7 +7,7 @@ import { createClient, loadProfile } from "@/lib/supabase";
 const PUBLIC_ROUTES = ["/auth/signin", "/api/auth/signin", "/api/auth/signout"];
 
 function isPublic(pathname: string): boolean {
-  return PUBLIC_ROUTES.some((route) => pathname.startsWith(route));
+  return PUBLIC_ROUTES.some((route) => pathname === route || pathname.startsWith(route + "/"));
 }
 
 // Baseline security headers applied to every SSR response.
@@ -29,7 +29,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
   if (supabase) {
     const {
       data: { user },
+      error,
     } = await supabase.auth.getUser();
+    if (error) {
+      // Transient auth/Supabase failures fall through as "unauthenticated"
+      // (fail-open to /auth/signin); log so the outage is diagnosable.
+      console.error("[middleware] supabase.auth.getUser failed", { error });
+    }
     context.locals.user = user ?? null;
     context.locals.profile = user ? await loadProfile(supabase, user.id) : null;
   } else {
@@ -39,17 +45,20 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   const { pathname } = context.url;
 
+  const withSecurityHeaders = (response: Response): Response => {
+    for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
+      response.headers.set(name, value);
+    }
+    return response;
+  };
+
   if (isPublic(pathname)) {
     if (context.locals.user && pathname.startsWith("/auth/signin")) {
-      return context.redirect("/dashboard");
+      return withSecurityHeaders(context.redirect("/dashboard"));
     }
   } else if (!context.locals.user) {
-    return context.redirect("/auth/signin");
+    return withSecurityHeaders(context.redirect("/auth/signin"));
   }
 
-  const response = await next();
-  for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
-    response.headers.set(name, value);
-  }
-  return response;
+  return withSecurityHeaders(await next());
 });

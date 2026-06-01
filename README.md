@@ -95,10 +95,10 @@ cp .env.example .env
 npx supabase init
 ```
 
-3. Start the local stack (downloads Docker images on first run):
+3. Start the local stack (downloads Docker images on first run). Set `ADMIN_EMAIL`/`ADMIN_PASSWORD` first and use the project wrapper, which templates the seed before booting — see [Local admin seed](#local-admin-seed):
 
 ```bash
-npx supabase start
+npm run db:start
 ```
 
 4. Copy the credentials printed by the CLI into your `.env` and `.dev.vars`:
@@ -111,7 +111,7 @@ SUPABASE_KEY=<anon key from CLI output>
 5. To stop the stack when done:
 
 ```bash
-npx supabase stop
+npm run db:stop
 ```
 
 The local Studio UI is available at `http://localhost:54323`.

@@ -117,4 +117,37 @@ describe("middleware default-deny gate", () => {
     expect(context.locals.profile).toBeNull();
     expect(mockLoadProfile).not.toHaveBeenCalled();
   });
+
+  it("sets security headers on redirect responses (not just next())", async () => {
+    mockCreateClient.mockReturnValue(fakeClient(null));
+    const { result } = run("/predictions");
+    const response = await result;
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get("Strict-Transport-Security")).not.toBeNull();
+    expect(response.headers.get("X-Frame-Options")).toBe("DENY");
+    expect(response.headers.get("Content-Security-Policy")).not.toBeNull();
+  });
+
+  it("treats a prefix-collision path like /auth/signin-backdoor as private (302)", async () => {
+    mockCreateClient.mockReturnValue(fakeClient(null));
+    const { next, result } = run("/auth/signin-backdoor");
+    const response = await result;
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get("Location")).toBe("/auth/signin");
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it("sets locals null and gates when supabase is unconfigured (createClient returns null)", async () => {
+    mockCreateClient.mockReturnValue(null);
+    const { context, next, result } = run("/predictions");
+    const response = await result;
+
+    expect(context.locals.user).toBeNull();
+    expect(context.locals.profile).toBeNull();
+    expect(response.status).toBe(302);
+    expect(response.headers.get("Location")).toBe("/auth/signin");
+    expect(next).not.toHaveBeenCalled();
+  });
 });
