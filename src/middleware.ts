@@ -1,7 +1,14 @@
 import { defineMiddleware } from "astro:middleware";
-import { createClient } from "@/lib/supabase";
+import { createClient, loadProfile } from "@/lib/supabase";
 
-const PROTECTED_ROUTES = ["/dashboard"];
+// Default-deny gate (PRD `## Access Control`): every route is private unless its
+// prefix is listed here. `/api/auth/signout` is public so the sign-out form can
+// clear a session-clearing request without a refresh-token race.
+const PUBLIC_ROUTES = ["/auth/signin", "/api/auth/signin", "/api/auth/signout"];
+
+function isPublic(pathname: string): boolean {
+  return PUBLIC_ROUTES.some((route) => pathname === route || pathname.startsWith(route + "/"));
+}
 
 // Baseline security headers applied to every SSR response.
 // `public/_headers` does NOT apply to SSR responses on @astrojs/cloudflare v13 — only static assets.
@@ -22,21 +29,36 @@ export const onRequest = defineMiddleware(async (context, next) => {
   if (supabase) {
     const {
       data: { user },
+      error,
     } = await supabase.auth.getUser();
+    if (error) {
+      // Transient auth/Supabase failures fall through as "unauthenticated"
+      // (fail-open to /auth/signin); log so the outage is diagnosable.
+      console.error("[middleware] supabase.auth.getUser failed", { error });
+    }
     context.locals.user = user ?? null;
+    context.locals.profile = user ? await loadProfile(supabase, user.id) : null;
   } else {
     context.locals.user = null;
+    context.locals.profile = null;
   }
 
-  if (PROTECTED_ROUTES.some((route) => context.url.pathname.startsWith(route))) {
-    if (!context.locals.user) {
-      return context.redirect("/auth/signin");
+  const { pathname } = context.url;
+
+  const withSecurityHeaders = (response: Response): Response => {
+    for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
+      response.headers.set(name, value);
     }
+    return response;
+  };
+
+  if (isPublic(pathname)) {
+    if (context.locals.user && pathname.startsWith("/auth/signin")) {
+      return withSecurityHeaders(context.redirect("/dashboard"));
+    }
+  } else if (!context.locals.user) {
+    return withSecurityHeaders(context.redirect("/auth/signin"));
   }
 
-  const response = await next();
-  for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
-    response.headers.set(name, value);
-  }
-  return response;
+  return withSecurityHeaders(await next());
 });

@@ -1,8 +1,5 @@
 ---
-import Welcome from "@/components/Welcome.astro";
-import Layout from "@/layouts/Layout.astro";
+// Bare-domain bridge. Middleware default-deny handles the unauthed case
+// (redirect to /auth/signin); an authed visitor lands on the dashboard.
+return Astro.redirect("/dashboard", 302);
 ---
-
-<Layout>
-  <Welcome />
-</Layout>

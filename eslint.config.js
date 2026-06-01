@@ -65,6 +65,11 @@ const astroConfig = tseslint.config({
     "astro/no-set-html-directive": "error",
     "astro/no-unused-css-selector": "warn",
     "astro/prefer-class-list-directive": "warn",
+    // astro-eslint-parser hoists frontmatter into a synthetic function, so a
+    // top-level `return Astro.redirect(...)` has no parent node and crashes this
+    // rule. Astro's own ESLint config disables it for .astro files for the same
+    // reason. See https://github.com/withastro/prettier-plugin-astro/issues/451
+    "@typescript-eslint/no-misused-promises": "off",
   },
 });
 
@@ -89,6 +94,9 @@ const scriptsConfig = tseslint.config({
 
 export default tseslint.config(
   includeIgnoreFile(gitignorePath),
+  // Generated Supabase types: committed (so CI needs no Supabase CLI) but never
+  // hand-edited, so they are exempt from lint/format rules.
+  { ignores: ["src/db/database.types.ts"] },
   baseConfig,
   reactConfig,
   eslintPluginAstro.configs["flat/recommended"],

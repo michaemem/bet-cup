@@ -55,6 +55,11 @@ npm run dev
 - `npm run lint` - Run ESLint with type-checked rules
 - `npm run lint:fix` - Auto-fix ESLint issues
 - `npm run format` - Run Prettier
+- `npm run db:start` - Template the local admin seed, then start the Supabase stack
+- `npm run db:stop` - Stop the local Supabase stack
+- `npm run db:migration:new <name>` - Scaffold a new migration file
+- `npm run db:types` - Regenerate `src/db/database.types.ts` from the local DB
+- `npm run db:reset` - Re-template the seed and reset the local DB to migrations + seed
 
 ## Project Structure
 
@@ -90,10 +95,10 @@ cp .env.example .env
 npx supabase init
 ```
 
-3. Start the local stack (downloads Docker images on first run):
+3. Start the local stack (downloads Docker images on first run). Set `ADMIN_EMAIL`/`ADMIN_PASSWORD` first and use the project wrapper, which templates the seed before booting — see [Local admin seed](#local-admin-seed):
 
 ```bash
-npx supabase start
+npm run db:start
 ```
 
 4. Copy the credentials printed by the CLI into your `.env` and `.dev.vars`:
@@ -106,12 +111,43 @@ SUPABASE_KEY=<anon key from CLI output>
 5. To stop the stack when done:
 
 ```bash
-npx supabase stop
+npm run db:stop
 ```
 
 The local Studio UI is available at `http://localhost:54323`.
 
-No database tables or migrations are required — this project uses Supabase Auth's built-in `auth.users` table only.
+The schema (identity tables, RLS, role helpers, and the admin-seeding trigger) lives in `supabase/migrations/` and is applied automatically by `supabase start` / `npm run db:reset`. After a migration changes, regenerate the typed `Database` definition with `npm run db:types` (writes `src/db/database.types.ts`, which is committed so CI doesn't need the Supabase CLI).
+
+### Local admin seed
+
+BetCup has no self-registration: the single admin is seeded into the local database, and the `handle_new_user` trigger promotes them to the `admin` role automatically.
+
+1. Set the admin credentials in your `.env`:
+
+```
+ADMIN_EMAIL=admin@betcup.local
+ADMIN_PASSWORD=change-me-locally
+```
+
+2. Start the stack with the wrapper script (it templates `supabase/seed.sql` from `supabase/seed.sql.template` using those vars, then boots Supabase):
+
+```bash
+npm run db:start
+```
+
+The generated `supabase/seed.sql` is gitignored — only the template is committed, so no password ever lands in the repo. The seeded admin ends up with both `participant` and `admin` rows in `user_roles`; any other user created later gets `participant` only.
+
+### Production admin bootstrap
+
+In a hosted project the admin is created manually, but the same trigger handles role assignment. Order matters — the trigger reads `app.admin_email` at insert time:
+
+1. Open the Supabase Studio **SQL editor** for the project and run:
+
+```sql
+ALTER DATABASE postgres SET app.admin_email = '<real-admin-email>';
+```
+
+2. Go to **Authentication → Add user** and create the user with that exact email. The `handle_new_user` trigger fires on insert and grants the `admin` role in addition to `participant`.
 
 ### Using a cloud Supabase project instead
 
@@ -127,26 +163,16 @@ SUPABASE_URL=https://<project-ref>.supabase.co
 SUPABASE_KEY=<anon-key>
 ```
 
-### Email confirmation in local development
-
-By default Supabase requires email confirmation before a user can sign in. To skip this during local development:
-
-1. Open the Supabase dashboard for your project
-2. Go to **Authentication → Email → Confirm email**
-3. Toggle it **off**
-
-Users can then sign in immediately after sign-up without clicking a confirmation link.
-
 ### Auth routes
 
-| Route                 | Description                                                             |
-| --------------------- | ----------------------------------------------------------------------- |
-| `/auth/signin`        | Email/password sign-in form                                             |
-| `/auth/signup`        | Email/password sign-up form                                             |
-| `/auth/confirm-email` | Post-signup "check your inbox" page                                     |
-| `/dashboard`          | Example protected page (redirects to `/auth/signin` if unauthenticated) |
+| Route                | Description                                                             |
+| -------------------- | ----------------------------------------------------------------------- |
+| `/auth/signin`       | Email/password sign-in form                                             |
+| `/dashboard`         | Example protected page (redirects to `/auth/signin` if unauthenticated) |
+| `/api/auth/signin`   | Sign-in handler (`POST`)                                                |
+| `/api/auth/signout`  | Sign-out handler (`POST`)                                               |
 
-Route protection is handled in `src/middleware.ts`. Add paths to the `PROTECTED_ROUTES` array there to require authentication.
+Route protection is handled in `src/middleware.ts`, which is default-deny: every route except those in the `PUBLIC_ROUTES` array requires authentication.
 
 ## Deployment
 
