@@ -163,26 +163,16 @@ SUPABASE_URL=https://<project-ref>.supabase.co
 SUPABASE_KEY=<anon-key>
 ```
 
-### Email confirmation in local development
-
-By default Supabase requires email confirmation before a user can sign in. To skip this during local development:
-
-1. Open the Supabase dashboard for your project
-2. Go to **Authentication → Email → Confirm email**
-3. Toggle it **off**
-
-Users can then sign in immediately after sign-up without clicking a confirmation link.
-
 ### Auth routes
 
-| Route                 | Description                                                             |
-| --------------------- | ----------------------------------------------------------------------- |
-| `/auth/signin`        | Email/password sign-in form                                             |
-| `/auth/signup`        | Email/password sign-up form                                             |
-| `/auth/confirm-email` | Post-signup "check your inbox" page                                     |
-| `/dashboard`          | Example protected page (redirects to `/auth/signin` if unauthenticated) |
+| Route                | Description                                                             |
+| -------------------- | ----------------------------------------------------------------------- |
+| `/auth/signin`       | Email/password sign-in form                                             |
+| `/dashboard`         | Example protected page (redirects to `/auth/signin` if unauthenticated) |
+| `/api/auth/signin`   | Sign-in handler (`POST`)                                                |
+| `/api/auth/signout`  | Sign-out handler (`POST`)                                               |
 
-Route protection is handled in `src/middleware.ts`. Add paths to the `PROTECTED_ROUTES` array there to require authentication.
+Route protection is handled in `src/middleware.ts`, which is default-deny: every route except those in the `PUBLIC_ROUTES` array requires authentication.
 
 ## Deployment
 
