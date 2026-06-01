@@ -603,30 +603,30 @@ End-to-end manual walk-through that exercises every phase together:
 
 #### Automated
 
-- [x] 3.1 Type check + lint pass: `npx astro sync && npm run lint` clean
-- [x] 3.2 Build passes: `npm run build` succeeds
-- [x] 3.3 `check:wrangler` passes
-- [x] 3.4 `git status` shows four deletions plus edits to `signin.astro`, `config.toml`, `README.md`
+- [x] 3.1 Type check + lint pass: `npx astro sync && npm run lint` clean — 562bbbb
+- [x] 3.2 Build passes: `npm run build` succeeds — 562bbbb
+- [x] 3.3 `check:wrangler` passes — 562bbbb
+- [x] 3.4 `git status` shows four deletions plus edits to `signin.astro`, `config.toml`, `README.md` — 562bbbb
 
 #### Manual
 
-- [x] 3.5 `curl -i http://localhost:8788/auth/signup` returns 404
-- [x] 3.6 `curl -i -X POST http://localhost:8788/api/auth/signup` returns 404
-- [x] 3.7 Direct call to local Supabase `POST /auth/v1/signup` returns "Signups not allowed for this instance"
-- [x] 3.8 `signin.astro` no longer shows a "Don't have an account?" link
-- [x] 3.9 README has no occurrences of `signup`, `SignUpForm`, `/auth/signup`, or `confirm-email`
+- [x] 3.5 `curl -i http://localhost:8788/auth/signup` returns 404 — 562bbbb
+- [x] 3.6 `curl -i -X POST http://localhost:8788/api/auth/signup` returns 404 — 562bbbb
+- [x] 3.7 Direct call to local Supabase `POST /auth/v1/signup` returns "Signups not allowed for this instance" — 562bbbb
+- [x] 3.8 `signin.astro` no longer shows a "Don't have an account?" link — 562bbbb
+- [x] 3.9 README has no occurrences of `signup`, `SignUpForm`, `/auth/signup`, or `confirm-email` — 562bbbb
 
 ### Phase 4: Test Harness
 
 #### Automated
 
-- [ ] 4.1 `npm test` exits 0 and reports six passing tests under `src/middleware.test.ts`
-- [ ] 4.2 `npm run lint` passes (no `any` leaks from Vitest globals)
-- [ ] 4.3 Build still passes: `npm run build` clean
+- [x] 4.1 `npm test` exits 0 and reports six passing tests under `src/middleware.test.ts`
+- [x] 4.2 `npm run lint` passes (no `any` leaks from Vitest globals)
+- [x] 4.3 Build still passes: `npm run build` clean
 
 #### Manual
 
-- [ ] 4.4 `npm run test:watch` boots and re-runs on edit
+- [x] 4.4 `npm run test:watch` boots and re-runs on edit
 - [ ] 4.5 CI run on the PR: `ci` job runs `npm test` and reports passing
 - [ ] 4.6 CI `smoke` job still passes its two URL checks
-- [ ] 4.7 `.github/workflows/ci.yml` `ci` job has `npm test` inserted between `npm run lint` and `npm run build`
+- [x] 4.7 `.github/workflows/ci.yml` `ci` job has `npm test` inserted between `npm run lint` and `npm run build`

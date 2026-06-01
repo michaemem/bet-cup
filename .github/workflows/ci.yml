@@ -19,6 +19,7 @@ jobs:
       - run: npm run check:wrangler
       - run: npx astro sync
       - run: npm run lint
+      - run: npm test
       - run: npm run build
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
