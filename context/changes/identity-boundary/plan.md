@@ -620,13 +620,13 @@ End-to-end manual walk-through that exercises every phase together:
 
 #### Automated
 
-- [x] 4.1 `npm test` exits 0 and reports six passing tests under `src/middleware.test.ts`
-- [x] 4.2 `npm run lint` passes (no `any` leaks from Vitest globals)
-- [x] 4.3 Build still passes: `npm run build` clean
+- [x] 4.1 `npm test` exits 0 and reports six passing tests under `src/middleware.test.ts` — 0f516c0
+- [x] 4.2 `npm run lint` passes (no `any` leaks from Vitest globals) — 0f516c0
+- [x] 4.3 Build still passes: `npm run build` clean — 0f516c0
 
 #### Manual
 
-- [x] 4.4 `npm run test:watch` boots and re-runs on edit
-- [ ] 4.5 CI run on the PR: `ci` job runs `npm test` and reports passing
-- [ ] 4.6 CI `smoke` job still passes its two URL checks
-- [x] 4.7 `.github/workflows/ci.yml` `ci` job has `npm test` inserted between `npm run lint` and `npm run build`
+- [x] 4.4 `npm run test:watch` boots and re-runs on edit — 0f516c0
+- [x] 4.5 CI run on the PR: `ci` job runs `npm test` and reports passing — 0f516c0
+- [x] 4.6 CI `smoke` job still passes its two URL checks — 0f516c0
+- [x] 4.7 `.github/workflows/ci.yml` `ci` job has `npm test` inserted between `npm run lint` and `npm run build` — 0f516c0
