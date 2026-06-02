@@ -554,61 +554,61 @@ adds result columns) is a separate, approval-gated migration.
 
 #### Automated
 
-- [ ] 1.1 Migration applies cleanly: `npm run db:reset`
-- [ ] 1.2 Types regenerate without diff drift: `npm run db:types`
-- [ ] 1.3 Type checking passes: `npx tsc --noEmit`
-- [ ] 1.4 Linting passes: `npm run lint`
-- [ ] 1.5 Unit suite still green: `npm test` (RLS integration test self-skips with no DB)
+- [x] 1.1 Migration applies cleanly: `npm run db:reset`
+- [x] 1.2 Types regenerate without diff drift: `npm run db:types` (hand-written types are an exact match for the generated output)
+- [x] 1.3 Type checking passes: `npx tsc --noEmit`
+- [x] 1.4 Linting passes: `npm run lint`
+- [x] 1.5 Unit suite still green: `npm test` (RLS integration test self-skips with no DB)
 
 #### Manual / Integration
 
-- [ ] 1.6 RLS/edit-lock integration test passes against a local DB (`SUPABASE_DB_URL=... npm test` with `npx supabase start`)
-- [ ] 1.7 Admin can insert a match in Studio; participant cannot
-- [ ] 1.8 `UPDATE` on a past-kickoff match is rejected at the DB
+- [x] 1.6 RLS/edit-lock integration test passes against a local DB (`SUPABASE_DB_URL=... npm test` with `npx supabase start`) — 5/5 pass
+- [x] 1.7 Admin can insert a match in Studio; participant cannot (asserted by RLS test: admin insert succeeds, participant insert 403)
+- [x] 1.8 `UPDATE` on a past-kickoff match is rejected at the DB (asserted by RLS test: past-kickoff update returns zero rows)
 
 ### Phase 2: Server mutation layer
 
 #### Automated
 
-- [ ] 2.1 Deps install and lockfile updates: `npm install`
-- [ ] 2.2 Type checking passes: `npx tsc --noEmit`
-- [ ] 2.3 Linting passes: `npm run lint`
-- [ ] 2.4 TZ + parser unit tests pass: `npm test`
-- [ ] 2.5 Middleware admin-gate tests pass: `npm test`
-- [ ] 2.6 `check:wrangler` still green: `npm run check:wrangler`
+- [x] 2.1 Deps install and lockfile updates: `npm install`
+- [x] 2.2 Type checking passes: `npx tsc --noEmit`
+- [x] 2.3 Linting passes: `npm run lint`
+- [x] 2.4 TZ + parser unit tests pass: `npm test`
+- [x] 2.5 Middleware admin-gate tests pass: `npm test`
+- [x] 2.6 `check:wrangler` still green: `npm run check:wrangler`
 
 #### Manual
 
-- [ ] 2.7 Calling an Action as a non-admin returns `UNAUTHORIZED`
-- [ ] 2.8 Wall-clock kickoff in a non-UTC zone round-trips to the right UTC instant
+- [x] 2.7 Calling an Action as a non-admin returns `UNAUTHORIZED` (401, "Admin access required" with valid input)
+- [x] 2.8 Wall-clock kickoff in a non-UTC zone round-trips to the right UTC instant (Warsaw 20:00 → 18:00Z)
 
 ### Phase 3: One-by-one tournament + match UI
 
 #### Automated
 
-- [ ] 3.1 Type checking passes: `npx tsc --noEmit`
-- [ ] 3.2 Linting passes: `npm run lint`
-- [ ] 3.3 Production build succeeds: `npm run build`
+- [x] 3.1 Type checking passes: `npx tsc --noEmit`
+- [x] 3.2 Linting passes: `npm run lint`
+- [x] 3.3 Production build succeeds: `npm run build`
 
 #### Manual
 
-- [ ] 3.4 Admin creates tournament; re-visit shows edit (no second create)
-- [ ] 3.5 Admin adds a match; correct local kickoff appears in the list
-- [ ] 3.6 Future match edits; past-kickoff match shows locked
-- [ ] 3.7 Non-admin visiting `/admin` is redirected to `/dashboard`
+- [x] 3.4 Admin creates tournament; re-visit shows edit (no second create)
+- [x] 3.5 Admin adds a match; correct local kickoff appears in the list
+- [x] 3.6 Future match edits; past-kickoff match shows locked
+- [x] 3.7 Non-admin visiting `/admin` is redirected to `/dashboard`
 
 ### Phase 4: Bulk-paste import
 
 #### Automated
 
-- [ ] 4.1 Type checking passes: `npx tsc --noEmit`
-- [ ] 4.2 Linting passes: `npm run lint`
-- [ ] 4.3 Production build succeeds: `npm run build`
-- [ ] 4.4 Parser unit tests still pass: `npm test`
+- [x] 4.1 Type checking passes: `npx tsc --noEmit`
+- [x] 4.2 Linting passes: `npm run lint`
+- [x] 4.3 Production build succeeds: `npm run build`
+- [x] 4.4 Parser unit tests still pass: `npm test`
 
 #### Manual
 
-- [ ] 4.5 Clean fixture list previews all valid; Confirm saves all
-- [ ] 4.6 Malformed line flagged; inline fix enables Confirm
-- [ ] 4.7 Past-kickoff rows warned but saveable
-- [ ] 4.8 Delimiter-flexible paste parses correctly
+- [x] 4.5 Clean fixture list previews all valid; Confirm saves all
+- [x] 4.6 Malformed line flagged; inline fix enables Confirm
+- [x] 4.7 Past-kickoff rows warned but saveable
+- [x] 4.8 Delimiter-flexible paste parses correctly (supported: `,` / tab / `;` / `|`; spaces intentionally unsupported — kickoff field contains a space)

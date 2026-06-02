@@ -96,7 +96,10 @@ export default tseslint.config(
   includeIgnoreFile(gitignorePath),
   // Generated Supabase types: committed (so CI needs no Supabase CLI) but never
   // hand-edited, so they are exempt from lint/format rules.
-  { ignores: ["src/db/database.types.ts"] },
+  // shadcn primitives are likewise vendored via `npx shadcn add` and not
+  // hand-authored (AGENTS.md); the ones whose generated form conflicts with the
+  // strict type-checked ruleset are exempted on the same basis.
+  { ignores: ["src/db/database.types.ts", "src/components/ui/calendar.tsx", "src/components/ui/form.tsx"] },
   baseConfig,
   reactConfig,
   eslintPluginAstro.configs["flat/recommended"],

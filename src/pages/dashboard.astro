@@ -14,6 +14,16 @@ const { user, profile } = Astro.locals;
         Welcome, <span class="font-semibold text-white">{profile?.displayName ?? user?.email}</span>
       </p>
       <p class="mt-2 text-sm text-blue-100/50">This page is only for authenticated users.</p>
+      {
+        profile?.roles.includes("admin") && (
+          <a
+            href="/admin"
+            class="mt-6 inline-block rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm transition-colors hover:bg-white/20"
+          >
+            Tournament admin
+          </a>
+        )
+      }
       <form method="POST" action="/api/auth/signout" class="mt-6">
         <button
           type="submit"

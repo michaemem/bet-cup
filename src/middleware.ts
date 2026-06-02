@@ -6,8 +6,21 @@ import { createClient, loadProfile } from "@/lib/supabase";
 // clear a session-clearing request without a refresh-token race.
 const PUBLIC_ROUTES = ["/auth/signin", "/api/auth/signin", "/api/auth/signout"];
 
+// Admin-only surface (S-02). After the auth gate, a non-admin who is otherwise
+// authenticated is redirected to /dashboard. Prefix-matched the same way as
+// PUBLIC_ROUTES so `/administrators` does NOT collide with `/admin`.
+const ADMIN_ROUTES = ["/admin"];
+
+function matchesPrefix(pathname: string, prefixes: string[]): boolean {
+  return prefixes.some((route) => pathname === route || pathname.startsWith(route + "/"));
+}
+
 function isPublic(pathname: string): boolean {
-  return PUBLIC_ROUTES.some((route) => pathname === route || pathname.startsWith(route + "/"));
+  return matchesPrefix(pathname, PUBLIC_ROUTES);
+}
+
+function isAdminRoute(pathname: string): boolean {
+  return matchesPrefix(pathname, ADMIN_ROUTES);
 }
 
 // Baseline security headers applied to every SSR response.
@@ -58,6 +71,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
     }
   } else if (!context.locals.user) {
     return withSecurityHeaders(context.redirect("/auth/signin"));
+  } else if (isAdminRoute(pathname) && !context.locals.profile?.roles.includes("admin")) {
+    // Authenticated but not an admin: deny the admin surface.
+    return withSecurityHeaders(context.redirect("/dashboard"));
   }
 
   return withSecurityHeaders(await next());

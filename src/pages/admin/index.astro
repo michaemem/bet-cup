@@ -1,0 +1,82 @@
+---
+import { BulkPasteImport } from "@/components/admin/BulkPasteImport";
+import { MatchForm } from "@/components/admin/MatchForm";
+import { MatchList, type MatchRow } from "@/components/admin/MatchList";
+import { TournamentForm } from "@/components/admin/TournamentForm";
+import Layout from "@/layouts/Layout.astro";
+import type { TournamentInput } from "@/lib/schemas/tournament";
+import { createClient } from "@/lib/supabase";
+import { formatInZone } from "@/lib/time";
+
+// Admin-only surface (middleware ADMIN_ROUTES gate). Reads tournament + matches
+// server-side under the admin RLS policies; the React islands handle mutations.
+const supabase = createClient(Astro.request.headers, Astro.cookies);
+
+let tournamentInitial: TournamentInput | null = null;
+let timeZone: string | null = null;
+let matchRows: MatchRow[] = [];
+
+if (supabase) {
+  const { data: tournament } = await supabase.from("tournaments").select("id, name, time_zone").limit(1).maybeSingle();
+
+  if (tournament) {
+    const zone = tournament.time_zone;
+    timeZone = zone;
+    tournamentInitial = { name: tournament.name, timeZone: zone };
+
+    const { data: matches } = await supabase
+      .from("matches")
+      .select("id, home_team, away_team, kickoff_time")
+      .order("kickoff_time", { ascending: true });
+
+    const now = Date.now();
+    matchRows = (matches ?? []).map((match) => {
+      const utc = new Date(match.kickoff_time);
+      return {
+        id: match.id,
+        homeTeam: match.home_team,
+        awayTeam: match.away_team,
+        kickoffLocal: formatInZone(utc, zone),
+        isPast: utc.getTime() <= now,
+      };
+    });
+  }
+}
+---
+
+<Layout title="Admin — Tournament">
+  <main class="mx-auto max-w-3xl space-y-10 p-6">
+    <header>
+      <h1 class="text-2xl font-bold">Tournament admin</h1>
+      <p class="text-muted-foreground text-sm">
+        Create the tournament, then add matches one-by-one or paste a fixture list.
+      </p>
+    </header>
+
+    <section class="space-y-4">
+      <h2 class="text-lg font-semibold">{tournamentInitial ? "Edit tournament" : "Create tournament"}</h2>
+      <TournamentForm initial={tournamentInitial} client:load />
+    </section>
+
+    {
+      timeZone && (
+        <>
+          <section class="space-y-4">
+            <h2 class="text-lg font-semibold">Add a match</h2>
+            <MatchForm timeZone={timeZone} client:load />
+          </section>
+
+          <section class="space-y-4">
+            <h2 class="text-lg font-semibold">Bulk paste fixtures</h2>
+            <BulkPasteImport timeZone={timeZone} client:load />
+          </section>
+
+          <section class="space-y-4">
+            <h2 class="text-lg font-semibold">Matches</h2>
+            <MatchList timeZone={timeZone} matches={matchRows} client:load />
+          </section>
+        </>
+      )
+    }
+  </main>
+</Layout>
