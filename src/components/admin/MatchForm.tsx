@@ -151,7 +151,12 @@ export function MatchForm({ timeZone, match, onSaved }: Props) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(() => submit())} className="space-y-4">
+      <form
+        onSubmit={form.handleSubmit(async () => {
+          await submit();
+        })}
+        className="space-y-4"
+      >
         <div className="flex flex-wrap gap-3">
           <FormField
             control={form.control}

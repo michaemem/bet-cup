@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { KICKOFF_LOCAL_FORMAT, localToUtc, parseWallClock } from "@/lib/time";
+import { isValidTimeZone, KICKOFF_LOCAL_FORMAT, localToUtc, parseWallClock } from "@/lib/time";
 
 /**
  * Shared match schemas, imported by both the Actions (server validation) and
@@ -19,7 +19,7 @@ const matchFields = z.object({
   homeTeam: z.string().trim().min(1, "Home team is required"),
   awayTeam: z.string().trim().min(1, "Away team is required"),
   kickoffLocal: z.string().trim().min(1, "Kickoff is required"),
-  timeZone: z.string().trim().min(1, "Time zone is required"),
+  timeZone: z.string().trim().min(1, "Time zone is required").refine(isValidTimeZone, "Invalid time zone"),
 });
 
 function toMatch<T extends z.infer<typeof matchFields>>(val: T, ctx: z.RefinementCtx) {

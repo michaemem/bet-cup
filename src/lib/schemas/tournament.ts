@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isValidTimeZone } from "@/lib/time";
 
 /**
  * The single tournament's editable fields. Imported by both the Action
@@ -8,7 +9,7 @@ import { z } from "zod";
  */
 export const tournamentSchema = z.object({
   name: z.string().trim().min(1, "Tournament name is required"),
-  timeZone: z.string().trim().min(1, "Time zone is required"),
+  timeZone: z.string().trim().min(1, "Time zone is required").refine(isValidTimeZone, "Invalid time zone"),
 });
 
 export type TournamentInput = z.infer<typeof tournamentSchema>;

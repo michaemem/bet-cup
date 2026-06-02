@@ -29,6 +29,20 @@ export interface WallClockParts {
 /** The canonical wall-clock format both entry paths normalize to. */
 export const KICKOFF_LOCAL_FORMAT = "YYYY-MM-DD HH:mm";
 
+/**
+ * True iff `timeZone` is a valid IANA zone the runtime accepts. Guards the
+ * schema boundary so an invalid zone is a clean field error rather than an
+ * Invalid Date that later throws `RangeError` in `localToUtc(...).toISOString()`.
+ */
+export function isValidTimeZone(timeZone: string): boolean {
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 const KICKOFF_LOCAL_RE = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})$/;
 
 /**

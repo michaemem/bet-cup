@@ -17,20 +17,34 @@ let timeZone: string | null = null;
 let matchRows: MatchRow[] = [];
 
 if (supabase) {
-  const { data: tournament } = await supabase.from("tournaments").select("id, name, time_zone").limit(1).maybeSingle();
+  const { data: tournament, error: tournamentError } = await supabase
+    .from("tournaments")
+    .select("id, name, time_zone")
+    .limit(1)
+    .maybeSingle();
+  // Surface a read failure instead of rendering it as "no tournament yet",
+  // which would mislead the admin into re-creating the tournament.
+  if (tournamentError) {
+    console.error("admin: failed to load tournament", tournamentError);
+    return new Response("Failed to load tournament", { status: 500 });
+  }
 
   if (tournament) {
     const zone = tournament.time_zone;
     timeZone = zone;
     tournamentInitial = { name: tournament.name, timeZone: zone };
 
-    const { data: matches } = await supabase
+    const { data: matches, error: matchesError } = await supabase
       .from("matches")
       .select("id, home_team, away_team, kickoff_time")
       .order("kickoff_time", { ascending: true });
+    if (matchesError) {
+      console.error("admin: failed to load matches", matchesError);
+      return new Response("Failed to load matches", { status: 500 });
+    }
 
     const now = Date.now();
-    matchRows = (matches ?? []).map((match) => {
+    matchRows = matches.map((match) => {
       const utc = new Date(match.kickoff_time);
       return {
         id: match.id,

@@ -18,6 +18,17 @@ import { createClient } from "@/lib/supabase";
 
 const NOT_CONFIGURED = "Supabase is not configured";
 const KICKED_OFF = "This match has already kicked off and can no longer be edited.";
+const GENERIC_DB_ERROR = "Something went wrong. Please try again.";
+
+/**
+ * Log the full DB error server-side and surface only a stable, generic message,
+ * so raw Postgres/PostgREST messages (table/column/constraint names) never reach
+ * the client.
+ */
+function internalError(error: unknown): ActionError {
+  console.error("action db error", error);
+  return new ActionError({ code: "INTERNAL_SERVER_ERROR", message: GENERIC_DB_ERROR });
+}
 
 interface AdminContext {
   locals: App.Locals;
@@ -37,12 +48,27 @@ function adminClient(context: AdminContext): SupabaseClient<Database> {
   return supabase;
 }
 
-/** Resolve the single tournament's id, or refuse if none exists yet. */
-async function requireTournamentId(supabase: SupabaseClient<Database>): Promise<string> {
-  const { data, error } = await supabase.from("tournaments").select("id").limit(1).maybeSingle();
-  if (error) throw new ActionError({ code: "INTERNAL_SERVER_ERROR", message: error.message });
+/** Resolve the single tournament (id + zone), or refuse if none exists yet. */
+async function requireTournament(supabase: SupabaseClient<Database>): Promise<{ id: string; time_zone: string }> {
+  const { data, error } = await supabase.from("tournaments").select("id, time_zone").limit(1).maybeSingle();
+  if (error) throw internalError(error);
   if (!data) throw new ActionError({ code: "BAD_REQUEST", message: "Create the tournament before adding matches." });
-  return data.id;
+  return data;
+}
+
+/**
+ * The kickoff was converted to UTC client-side using `inputZone`; reject unless
+ * it matches the tournament's stored zone. The DB zone is the source of truth,
+ * so a crafted or stale client zone can't store an instant inconsistent with
+ * what the admin UI renders against.
+ */
+function assertTournamentZone(inputZone: string, tournamentZone: string): void {
+  if (inputZone !== tournamentZone) {
+    throw new ActionError({
+      code: "BAD_REQUEST",
+      message: "Match timezone must match the tournament timezone.",
+    });
+  }
 }
 
 export const server = {
@@ -58,7 +84,7 @@ export const server = {
           .select("id")
           .limit(1)
           .maybeSingle();
-        if (readErr) throw new ActionError({ code: "INTERNAL_SERVER_ERROR", message: readErr.message });
+        if (readErr) throw internalError(readErr);
 
         const values = { name: input.name, time_zone: input.timeZone };
         const query = existing
@@ -66,7 +92,7 @@ export const server = {
           : supabase.from("tournaments").insert(values);
 
         const { data, error } = await query.select("id, name, time_zone").single();
-        if (error) throw new ActionError({ code: "INTERNAL_SERVER_ERROR", message: error.message });
+        if (error) throw internalError(error);
         return data;
       },
     }),
@@ -78,18 +104,19 @@ export const server = {
       input: matchInputSchema,
       handler: async (input, context) => {
         const supabase = adminClient(context);
-        const tournamentId = await requireTournamentId(supabase);
+        const tournament = await requireTournament(supabase);
+        assertTournamentZone(input.timeZone, tournament.time_zone);
         const { data, error } = await supabase
           .from("matches")
           .insert({
-            tournament_id: tournamentId,
+            tournament_id: tournament.id,
             home_team: input.homeTeam,
             away_team: input.awayTeam,
             kickoff_time: input.kickoffUtc.toISOString(),
           })
           .select("id")
           .single();
-        if (error) throw new ActionError({ code: "INTERNAL_SERVER_ERROR", message: error.message });
+        if (error) throw internalError(error);
         return data;
       },
     }),
@@ -99,15 +126,18 @@ export const server = {
       input: matchBulkSchema,
       handler: async (input, context) => {
         const supabase = adminClient(context);
-        const tournamentId = await requireTournamentId(supabase);
+        const tournament = await requireTournament(supabase);
+        input.matches.forEach((match) => {
+          assertTournamentZone(match.timeZone, tournament.time_zone);
+        });
         const rows = input.matches.map((match) => ({
-          tournament_id: tournamentId,
+          tournament_id: tournament.id,
           home_team: match.homeTeam,
           away_team: match.awayTeam,
           kickoff_time: match.kickoffUtc.toISOString(),
         }));
         const { data, error } = await supabase.from("matches").insert(rows).select("id");
-        if (error) throw new ActionError({ code: "INTERNAL_SERVER_ERROR", message: error.message });
+        if (error) throw internalError(error);
         return { count: data.length };
       },
     }),
@@ -117,6 +147,8 @@ export const server = {
       input: matchUpdateSchema,
       handler: async (input, context) => {
         const supabase = adminClient(context);
+        const tournament = await requireTournament(supabase);
+        assertTournamentZone(input.timeZone, tournament.time_zone);
 
         // App-layer pre-check: a friendlier/earlier message than the silent
         // RLS zero-row result below (which remains the race-proof guard).
@@ -125,7 +157,12 @@ export const server = {
           .select("kickoff_time")
           .eq("id", input.id)
           .maybeSingle();
-        if (current && new Date(current.kickoff_time).getTime() <= Date.now()) {
+        // Distinguish "no such match" from the kickoff lock so a stale/bad id
+        // doesn't masquerade as "already kicked off".
+        if (!current) {
+          throw new ActionError({ code: "NOT_FOUND", message: "Match not found." });
+        }
+        if (new Date(current.kickoff_time).getTime() <= Date.now()) {
           throw new ActionError({ code: "FORBIDDEN", message: KICKED_OFF });
         }
 
@@ -138,7 +175,7 @@ export const server = {
           })
           .eq("id", input.id)
           .select("id");
-        if (error) throw new ActionError({ code: "INTERNAL_SERVER_ERROR", message: error.message });
+        if (error) throw internalError(error);
 
         // RLS `UPDATE USING (kickoff_time > now())` filters a past-kickoff row
         // out silently: zero rows, no error. Treat that as the lock firing.
