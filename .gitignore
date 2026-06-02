@@ -36,3 +36,7 @@ supabase/seed.sql
 .cursor/rules/10x*
 .cursor/prompts/*
 .cursor/.10x-cli-manifest.json
+.cursor/settings.json
+
+# Supabase Studio local scratch queries
+supabase/snippets/

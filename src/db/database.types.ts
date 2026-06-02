@@ -34,6 +34,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      matches: {
+        Row: {
+          away_team: string
+          created_at: string
+          home_team: string
+          id: string
+          kickoff_time: string
+          tournament_id: string
+          updated_at: string
+        }
+        Insert: {
+          away_team: string
+          created_at?: string
+          home_team: string
+          id?: string
+          kickoff_time: string
+          tournament_id: string
+          updated_at?: string
+        }
+        Update: {
+          away_team?: string
+          created_at?: string
+          home_team?: string
+          id?: string
+          kickoff_time?: string
+          tournament_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matches_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -54,6 +92,30 @@ export type Database = {
           display_name?: string
           id?: string
           legal_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tournaments: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          time_zone: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          time_zone: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          time_zone?: string
           updated_at?: string
         }
         Relationships: []

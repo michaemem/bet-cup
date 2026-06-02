@@ -3,7 +3,7 @@ project: BetCup
 version: 1
 status: draft
 created: 2026-05-28
-updated: 2026-05-28
+updated: 2026-06-01
 prd_version: 1
 main_goal: speed
 top_blocker: time
@@ -29,9 +29,9 @@ BetCup is a private prediction pool for one friend group running one football to
 
 | ID | Change ID | Outcome (user can …) | Prerequisites | PRD refs | Status |
 |---|---|---|---|---|---|
-| F-01 | identity-boundary | (foundation) every route is gated; only admin can mint participants; data model has a clean role split | — | FR-005, FR-017, Access Control, Non-Goals (self-registration) | ready |
+| F-01 | identity-boundary | (foundation) every route is gated; only admin can mint participants; data model has a clean role split | — | FR-005, FR-017, Access Control, Non-Goals (self-registration) | done |
 | S-01 | admin-creates-participants | admin creates a named participant with an initial password and that participant logs in successfully | F-01 | FR-001, FR-002 | proposed |
-| S-02 | tournament-and-matches | admin creates the tournament and populates its match list (one-by-one or via bulk paste), and edits matches before kickoff | F-01 | FR-006, FR-007, FR-008, FR-022 | proposed |
+| S-02 | tournament-and-matches | admin creates the tournament and populates its match list (one-by-one or via bulk paste), and edits matches before kickoff | F-01 | FR-006, FR-007, FR-008, FR-022 | ready |
 | S-03 | prediction-with-blindness | participant submits and edits a prediction before kickoff; only the predictor can see it; after kickoff editing is blocked | F-01, S-02 | US-01, FR-011, FR-012, FR-013, FR-014, FR-015, FR-017 | proposed |
 | S-04 | results-scoring-leaderboard | admin enters/corrects a result, per-prediction points compute correctly, post-kickoff predictions become visible, the leaderboard ranks all participants | F-01, S-02, S-03 | US-02, FR-009, FR-010, FR-016, FR-018, FR-019, FR-020 | proposed |
 | S-05 | participant-match-history | participant reviews their own match-by-match history showing prediction, result, and points earned | S-04 | FR-021 | proposed |
@@ -74,7 +74,7 @@ What's already in place in the codebase as of 2026-05-28 (auto-researched + user
   - How is the single admin seeded — manual `INSERT` in a first migration, or env-driven bootstrap on first deploy? Owner: user. Block: no.
   - Does `profiles` mirror `auth.users` 1:1 with a `role` column, or is there a separate `participants` table joined to auth? Owner: `/10x-plan`. Block: no.
 - **Risk:** keeping the existing self-signup live alongside admin-creates-participant work would create incoherent app state during the build window (a participant could self-register while the admin onboards another). Removing it as part of the foundation closes that window before any user-facing slice ships.
-- **Status:** ready
+- **Status:** done
 
 ## Slices
 
@@ -103,7 +103,7 @@ What's already in place in the codebase as of 2026-05-28 (auto-researched + user
   - Bulk-paste grammar: does it tolerate whitespace variations and missing seconds? What time zone does the admin enter — local + assumed-server-TZ, or required UTC? Owner: `/10x-plan`. Block: no.
   - Edit-before-kickoff (FR-008): is the cutoff "kickoff_time > now()" enforced at the DB (RLS) or at the API layer? Owner: `/10x-plan`. Block: no.
 - **Risk:** the bulk-paste UX is the single largest piece of admin-facing work in the MVP; if it slips, the admin falls back to the one-by-one flow (FR-007), which is functionally sufficient — so the slice has a built-in graceful degradation. Sequencing this before `S-03` is non-negotiable: there's no prediction without matches.
-- **Status:** proposed
+- **Status:** ready
 
 ### S-03: Participant submits and edits predictions before kickoff (with blindness)
 
@@ -174,14 +174,14 @@ What's already in place in the codebase as of 2026-05-28 (auto-researched + user
 
 | Roadmap ID | Change ID | Suggested issue title | Ready for `/10x-plan` | Notes |
 |---|---|---|---|---|
-| F-01 | identity-boundary | Establish identity boundary: profiles + role + admin seeded + global auth gate; remove self-signup | yes | Run `/10x-plan identity-boundary` |
-| S-01 | admin-creates-participants | Admin creates and manages participant accounts | no | Unblocks once F-01 is `done` |
-| S-02 | tournament-and-matches | Admin creates tournament and adds matches (one-by-one + bulk paste) | no | Unblocks once F-01 is `done`; runs in parallel with S-01 |
+| F-01 | identity-boundary | Establish identity boundary: profiles + role + admin seeded + global auth gate; remove self-signup | done | Landed — foundation for all downstream slices |
+| S-01 | admin-creates-participants | Admin creates and manages participant accounts | yes | Unblocked (F-01 `done`); runs in parallel with S-02 |
+| S-02 | tournament-and-matches | Admin creates tournament and adds matches (one-by-one + bulk paste) | yes | Unblocked (F-01 `done`); plan written + reviewed — ready for `/10x-implement` |
 | S-03 | prediction-with-blindness | Participant submits and edits predictions before kickoff (with blindness invariant) | no | Unblocks once F-01 + S-02 are `done` |
 | S-04 | results-scoring-leaderboard | Admin enters results; scoring computes; leaderboard updates (north star) | no | Unblocks once F-01 + S-02 + S-03 are `done` |
 | S-05 | participant-match-history | Participant views their match-by-match history | no | Unblocks once S-04 is `done` |
 | S-06 | delete-participant | Admin deletes a participant; predictions and points are removed | no | Unblocks once S-01 + S-04 are `done` |
-| S-07 | participant-changes-password | Participant changes their own password | no | Unblocks once F-01 is `done`; deferred under `main_goal: speed` |
+| S-07 | participant-changes-password | Participant changes their own password | yes | Unblocked (F-01 `done`); deferred under `main_goal: speed` |
 
 ## Open Roadmap Questions
 

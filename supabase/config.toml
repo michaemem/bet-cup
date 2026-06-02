@@ -200,8 +200,12 @@ web3 = 30
 # secret = ""
 
 [auth.email]
-# Allow/disallow new user signups via email to your project.
-enable_signup = false
+# Enables the email/password provider so the seeded admin (and future invited
+# users) can SIGN IN. New self-service signups are still blocked globally by
+# the top-level `[auth] enable_signup = false` — BetCup has no public signup
+# (admin seeds users). Leaving this false disables the provider outright
+# (GoTrue `email_provider_disabled`), which breaks the app's own sign-in.
+enable_signup = true
 # If enabled, a user will be required to confirm any email change on both the old, and new email
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true

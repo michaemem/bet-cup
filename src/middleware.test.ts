@@ -33,7 +33,9 @@ function fakeClient(user: SupabaseUser | null) {
 /** Build a minimal APIContext-shaped object the middleware actually touches. */
 function mockAstroContext(pathname: string) {
   const url = new URL(`http://localhost${pathname}`);
-  const locals: App.Locals = { user: null, profile: null };
+  // Cast past the generated Cloudflare `App.Locals` augmentation (cfContext):
+  // the middleware never touches the runtime context, so the mock omits it.
+  const locals = { user: null, profile: null } as App.Locals;
   const context = {
     request: new Request(url),
     cookies: {},
@@ -146,6 +148,62 @@ describe("middleware default-deny gate", () => {
 
     expect(context.locals.user).toBeNull();
     expect(context.locals.profile).toBeNull();
+    expect(response.status).toBe(302);
+    expect(response.headers.get("Location")).toBe("/auth/signin");
+    expect(next).not.toHaveBeenCalled();
+  });
+});
+
+describe("middleware admin-route gate", () => {
+  it("redirects a participant-only profile visiting /admin to /dashboard (302)", async () => {
+    mockCreateClient.mockReturnValue(fakeClient({ id: "u2" }));
+    mockLoadProfile.mockResolvedValue({ id: "u2", displayName: "Pat", roles: ["participant"] });
+    const { next, result } = run("/admin");
+    const response = await result;
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get("Location")).toBe("/dashboard");
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it("lets an admin profile through to /admin (200)", async () => {
+    mockCreateClient.mockReturnValue(fakeClient({ id: "u1" }));
+    mockLoadProfile.mockResolvedValue({ id: "u1", displayName: "Admin", roles: ["participant", "admin"] });
+    const { next, result } = run("/admin");
+    const response = await result;
+
+    expect(next).toHaveBeenCalledOnce();
+    expect(response.status).toBe(200);
+  });
+
+  it("gates a nested admin path (/admin/tournament) for a participant (302)", async () => {
+    mockCreateClient.mockReturnValue(fakeClient({ id: "u2" }));
+    mockLoadProfile.mockResolvedValue({ id: "u2", displayName: "Pat", roles: ["participant"] });
+    const { next, result } = run("/admin/tournament");
+    const response = await result;
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get("Location")).toBe("/dashboard");
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it("does NOT gate a prefix-collision path (/administrators) — let through for an admin-less user", async () => {
+    mockCreateClient.mockReturnValue(fakeClient({ id: "u2" }));
+    mockLoadProfile.mockResolvedValue({ id: "u2", displayName: "Pat", roles: ["participant"] });
+    const { next, result } = run("/administrators");
+    const response = await result;
+
+    // /administrators is not an admin route, so the admin gate must not fire;
+    // the authed participant passes the default-deny gate and proceeds.
+    expect(next).toHaveBeenCalledOnce();
+    expect(response.status).toBe(200);
+  });
+
+  it("redirects an unauthenticated visit to /admin to /auth/signin (auth gate wins)", async () => {
+    mockCreateClient.mockReturnValue(fakeClient(null));
+    const { next, result } = run("/admin");
+    const response = await result;
+
     expect(response.status).toBe(302);
     expect(response.headers.get("Location")).toBe("/auth/signin");
     expect(next).not.toHaveBeenCalled();
