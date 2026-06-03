@@ -1,10 +1,10 @@
 ---
 change_id: tournament-and-matches
 title: Admin creates the tournament and adds matches (one-by-one + bulk paste)
-status: impl_reviewed
+status: archived
 created: 2026-06-01
-updated: 2026-06-02
-archived_at: null
+updated: 2026-06-03
+archived_at: 2026-06-03T19:01:08Z
 ---
 
 ## Notes
