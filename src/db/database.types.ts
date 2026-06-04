@@ -72,6 +72,58 @@ export type Database = {
           },
         ]
       }
+      predictions: {
+        Row: {
+          away_goals: number
+          created_at: string
+          home_goals: number
+          id: string
+          match_id: string
+          predictor_id: string
+          updated_at: string
+        }
+        Insert: {
+          away_goals: number
+          created_at?: string
+          home_goals: number
+          id?: string
+          match_id: string
+          predictor_id: string
+          updated_at?: string
+        }
+        Update: {
+          away_goals?: number
+          created_at?: string
+          home_goals?: number
+          id?: string
+          match_id?: string
+          predictor_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "predictions_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "predictions_predictor_id_fkey"
+            columns: ["predictor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "predictions_predictor_id_fkey"
+            columns: ["predictor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -175,6 +227,7 @@ export type Database = {
       }
       is_admin: { Args: never; Returns: boolean }
       is_participant: { Args: never; Returns: boolean }
+      match_is_kicked_off: { Args: { p_match_id: string }; Returns: boolean }
     }
     Enums: {
       user_role: "admin" | "participant"
