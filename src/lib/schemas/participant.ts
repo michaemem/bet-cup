@@ -14,7 +14,11 @@ export const participantCreateSchema = z.object({
     .toLowerCase()
     .min(3, "Username must be at least 3 characters")
     .max(30, "Username must be at most 30 characters")
-    .regex(/^[a-z0-9._-]+$/, "Use lowercase letters, digits, dot, underscore or hyphen"),
+    // Alphanumeric start/end with single `.`/`_`/`-` separators only between
+    // them: no leading/trailing/consecutive separators, so every accepted
+    // username is also a valid email local-part for the synthetic-email mapping
+    // (otherwise GoTrue could 422 on a name that isn't actually taken).
+    .regex(/^[a-z0-9]+([._-][a-z0-9]+)*$/, "Use lowercase letters and digits, separated by single . _ or -"),
 });
 
 export type ParticipantCreateInput = z.infer<typeof participantCreateSchema>;

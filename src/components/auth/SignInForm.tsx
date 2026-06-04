@@ -22,6 +22,8 @@ export default function SignInForm({ serverError }: Props) {
     }
     if (!password) {
       next.password = "Password is required";
+    } else if (password.length < 6) {
+      next.password = "Password must be at least 6 characters";
     }
     setErrors(next);
     return Object.keys(next).length === 0;

@@ -413,7 +413,7 @@ Negligible at the 5–20-user scale: one `auth.admin.createUser` round-trip per 
 - [x] 2.2 Build passes: `npm run build` — b8386e6
 - [x] 2.3 `check:wrangler` passes — b8386e6
 - [x] 2.4 Unit tests pass: `npm test` (password + participant-schema suites) — b8386e6
-- [x] 2.5 `SUPABASE_SERVICE_ROLE_KEY` read in exactly one module (`rg` returns only `src/lib/supabase-admin.ts`) — b8386e6
+- [x] 2.5 `SUPABASE_SERVICE_ROLE_KEY` read in exactly one production module (`rg "SUPABASE_SERVICE_ROLE_KEY" src --glob '!*.test.*'` returns only `src/lib/supabase-admin.ts`; test harnesses reference it via `process.env`) — b8386e6
 - [x] 2.6 `createAdminAuthClient` has exactly one importer (`rg` returns only `src/actions/index.ts`) — b8386e6
 
 #### Manual

@@ -34,7 +34,11 @@ export const POST: APIRoute = async (context) => {
 
   const { error } = await supabase.auth.signInWithPassword({ email, password: parsed.data.password });
   if (error) {
-    return context.redirect(`/auth/signin?error=${encodeURIComponent(error.message)}`);
+    // Log the raw GoTrue error server-side but show a generic message: the raw
+    // string could otherwise hint at the synthetic-email scheme, and a specific
+    // message reveals whether a username exists.
+    console.error("signin failed", error);
+    return context.redirect(`/auth/signin?error=${encodeURIComponent("Invalid username or password.")}`);
   }
 
   return context.redirect("/dashboard");

@@ -31,6 +31,12 @@ describe("participantCreateSchema", () => {
     expect(participantCreateSchema.safeParse({ name: "X", username: "bad/name" }).success).toBe(false);
   });
 
+  it("rejects leading/trailing/consecutive separators (invalid email local-parts)", () => {
+    for (const username of [".bob", "bob.", "_bob", "bob-", "a..b", "a__b", "a.-b"]) {
+      expect(participantCreateSchema.safeParse({ name: "X", username }).success).toBe(false);
+    }
+  });
+
   it("rejects an empty name", () => {
     expect(participantCreateSchema.safeParse({ name: "   ", username: "valid" }).success).toBe(false);
   });
