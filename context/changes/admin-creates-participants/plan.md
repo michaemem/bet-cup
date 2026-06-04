@@ -440,11 +440,11 @@ Negligible at the 5–20-user scale: one `auth.admin.createUser` round-trip per 
 
 #### Automated
 
-- [x] 4.1 `npm test` passes full suite locally with `SUPABASE_SERVICE_ROLE_KEY` set
-- [x] 4.2 `npm test` stays green in CI (integration skips cleanly without the service-role key; unit + guard run)
-- [x] 4.3 Lint + build still pass
+- [x] 4.1 `npm test` passes full suite locally with `SUPABASE_SERVICE_ROLE_KEY` set — 730f6b8
+- [x] 4.2 `npm test` stays green in CI (integration skips cleanly without the service-role key; unit + guard run) — 730f6b8
+- [x] 4.3 Lint + build still pass — 730f6b8
 
 #### Manual
 
-- [x] 4.4 Full loop: create `bob` → sign out → sign in as `bob` → `/dashboard`; re-create `bob` → "That username is taken."
-- [ ] 4.5 CI run on the PR is green (`smoke` + `ci` jobs)
+- [x] 4.4 Full loop: create `bob` → sign out → sign in as `bob` → `/dashboard`; re-create `bob` → "That username is taken." — 730f6b8
+- [x] 4.5 CI run on the PR is green (`smoke` + `ci` jobs) — 730f6b8
