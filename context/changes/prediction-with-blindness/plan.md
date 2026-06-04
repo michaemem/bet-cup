@@ -309,21 +309,21 @@ Forward-only migration (no edits to applied files). Dropping and recreating the 
 ### Phase 1: Migration — predictions schema, RLS & participant read
 
 #### Automated
-- [x] 1.1 Migration applies cleanly: `npm run db:reset`
-- [x] 1.2 Types regenerate with no drift on second run: `npm run db:types`
-- [x] 1.3 Type checking passes: `npx astro sync && npm run lint`
-- [x] 1.4 Build passes: `npm run build`
+- [x] 1.1 Migration applies cleanly: `npm run db:reset` — 3872610
+- [x] 1.2 Types regenerate with no drift on second run: `npm run db:types` — 3872610
+- [x] 1.3 Type checking passes: `npx astro sync && npm run lint` — 3872610
+- [x] 1.4 Build passes: `npm run build` — 3872610
 
 #### Manual
-- [x] 1.5 `predictions` RLS verified in Studio: four policies, no `is_admin()` in SELECT
-- [x] 1.6 `match_is_kicked_off()` returns true only for past-kickoff matches
+- [x] 1.5 `predictions` RLS verified in Studio: four policies, no `is_admin()` in SELECT — 3872610
+- [x] 1.6 `match_is_kicked_off()` returns true only for past-kickoff matches — 3872610
 
 ### Phase 2: Prediction schema + upsert Action
 
 #### Automated
-- [ ] 2.1 Lint + types pass: `npm run lint`
-- [ ] 2.2 Build passes: `npm run build`
-- [ ] 2.3 `npm test` passes (no regressions)
+- [x] 2.1 Lint + types pass: `npm run lint`
+- [x] 2.2 Build passes: `npm run build`
+- [x] 2.3 `npm test` passes (no regressions)
 
 #### Manual
 - [ ] 2.4 Upsert creates then updates a single row (no duplicates)
