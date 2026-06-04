@@ -103,12 +103,15 @@ jobs:
       - name: Start Supabase (applies migrations + seed)
         run: supabase start
       - name: Export Supabase connection env for the RLS tests
+        # `supabase status -o env` emits shell-quoted values (KEY="value"); strip
+        # the quotes before appending to $GITHUB_ENV, which stores the line
+        # verbatim (an embedded-quote SUPABASE_URL is an invalid URL otherwise).
         run: |
           supabase status -o env \
             --override-name api.url=SUPABASE_URL \
             --override-name auth.anon_key=SUPABASE_ANON_KEY \
             --override-name auth.service_role_key=SUPABASE_SERVICE_ROLE_KEY \
-            --override-name db.url=SUPABASE_DB_URL >> "$GITHUB_ENV"
+            --override-name db.url=SUPABASE_DB_URL | sed 's/"//g' >> "$GITHUB_ENV"
       - name: Run live-DB RLS integration tests
         run: npm test -- rls
 
