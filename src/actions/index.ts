@@ -1,10 +1,11 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient, User } from "@supabase/supabase-js";
 import type { AstroCookies } from "astro";
 import { ActionError, defineAction } from "astro:actions";
 import type { Database } from "@/db/database.types";
 import { generatePassword } from "@/lib/password";
 import { matchBulkSchema, matchInputSchema, matchUpdateSchema } from "@/lib/schemas/match";
 import { participantCreateSchema } from "@/lib/schemas/participant";
+import { predictionUpsertSchema } from "@/lib/schemas/prediction";
 import { tournamentSchema } from "@/lib/schemas/tournament";
 import { createClient } from "@/lib/supabase";
 import { createAdminAuthClient } from "@/lib/supabase-admin";
@@ -22,6 +23,7 @@ import { synthEmail } from "@/lib/username";
 
 const NOT_CONFIGURED = "Supabase is not configured";
 const KICKED_OFF = "This match has already kicked off and can no longer be edited.";
+const PREDICTION_LOCKED = "This match has already kicked off — predictions are locked.";
 const GENERIC_DB_ERROR = "Something went wrong. Please try again.";
 
 /**
@@ -58,20 +60,40 @@ function requireAdmin(locals: App.Locals): void {
   }
 }
 
-interface AdminContext {
+interface ActionContext {
   locals: App.Locals;
   request: Request;
   cookies: AstroCookies;
 }
 
 /** Build a request-scoped Supabase client, refusing non-admin callers. */
-function adminClient(context: AdminContext): SupabaseClient<Database> {
+function adminClient(context: ActionContext): SupabaseClient<Database> {
   requireAdmin(context.locals);
   const supabase = createClient(context.request.headers, context.cookies);
   if (!supabase) {
     throw new ActionError({ code: "INTERNAL_SERVER_ERROR", message: NOT_CONFIGURED });
   }
   return supabase;
+}
+
+/**
+ * Build a request-scoped SESSION Supabase client (anon key + the caller's
+ * cookies) for an authenticated participant, and return the session user. This
+ * is deliberately NOT the service-role client: predictions ride entirely on RLS
+ * (the FR-015 blindness invariant + the kickoff write-lock), so a
+ * privilege-bypassing client would silently defeat both. Throws UNAUTHORIZED if
+ * there is no session user.
+ */
+function sessionClient(context: ActionContext): { supabase: SupabaseClient<Database>; user: User } {
+  const { user } = context.locals;
+  if (!user) {
+    throw new ActionError({ code: "UNAUTHORIZED", message: "You must be signed in." });
+  }
+  const supabase = createClient(context.request.headers, context.cookies);
+  if (!supabase) {
+    throw new ActionError({ code: "INTERNAL_SERVER_ERROR", message: NOT_CONFIGURED });
+  }
+  return { supabase, user };
 }
 
 /** Resolve the single tournament (id + zone), or refuse if none exists yet. */
@@ -250,6 +272,58 @@ export const server = {
         // RLS `UPDATE USING (kickoff_time > now())` filters a past-kickoff row
         // out silently: zero rows, no error. Treat that as the lock firing.
         if (data.length === 0) throw new ActionError({ code: "FORBIDDEN", message: KICKED_OFF });
+        return data[0];
+      },
+    }),
+  },
+  predictions: {
+    /**
+     * Create-or-edit the caller's own prediction for a match (FR-011–FR-014).
+     * Runs on the SESSION client so RLS owns both the blindness invariant and
+     * the kickoff write-lock; defense-in-depth mirrors `matches.update`: an
+     * app-layer pre-check for a friendly message plus the race-proof RLS
+     * zero-row guard. The kickoff lock is enforced by the predictions INSERT
+     * and UPDATE policies (`not match_is_kicked_off(match_id)`), so an upsert
+     * cannot slip a row in after kickoff via either path.
+     */
+    upsert: defineAction({
+      accept: "json",
+      input: predictionUpsertSchema,
+      handler: async (input, context) => {
+        const { supabase, user } = sessionClient(context);
+
+        // App-layer pre-check: a friendlier/earlier message than the silent
+        // RLS zero-row result below (which remains the race-proof guard).
+        const { data: match, error: matchError } = await supabase
+          .from("matches")
+          .select("kickoff_time")
+          .eq("id", input.matchId)
+          .maybeSingle();
+        if (matchError) throw internalError(matchError);
+        if (!match) {
+          throw new ActionError({ code: "NOT_FOUND", message: "Match not found." });
+        }
+        if (new Date(match.kickoff_time).getTime() <= Date.now()) {
+          throw new ActionError({ code: "FORBIDDEN", message: PREDICTION_LOCKED });
+        }
+
+        const { data, error } = await supabase
+          .from("predictions")
+          .upsert(
+            {
+              predictor_id: user.id,
+              match_id: input.matchId,
+              home_goals: input.homeGoals,
+              away_goals: input.awayGoals,
+            },
+            { onConflict: "predictor_id,match_id" },
+          )
+          .select("id");
+        if (error) throw internalError(error);
+
+        // The predictions INSERT/UPDATE policies filter a post-kickoff write to
+        // zero rows with no error (race-proof lock). Treat that as the lock.
+        if (data.length === 0) throw new ActionError({ code: "FORBIDDEN", message: PREDICTION_LOCKED });
         return data[0];
       },
     }),

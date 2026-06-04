@@ -1,10 +1,10 @@
 ---
 change_id: admin-creates-participants
 title: Admin creates participant accounts with an initial password
-status: impl_reviewed
+status: archived
 created: 2026-06-03
 updated: 2026-06-04
-archived_at: null
+archived_at: 2026-06-04T17:59:48Z
 ---
 
 ## Notes

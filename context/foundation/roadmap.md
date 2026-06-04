@@ -3,7 +3,7 @@ project: BetCup
 version: 1
 status: draft
 created: 2026-05-28
-updated: 2026-06-03
+updated: 2026-06-04
 prd_version: 1
 main_goal: speed
 top_blocker: time
@@ -30,7 +30,7 @@ BetCup is a private prediction pool for one friend group running one football to
 | ID | Change ID | Outcome (user can …) | Prerequisites | PRD refs | Status |
 |---|---|---|---|---|---|
 | F-01 | identity-boundary | (foundation) every route is gated; only admin can mint participants; data model has a clean role split | — | FR-005, FR-017, Access Control, Non-Goals (self-registration) | done |
-| S-01 | admin-creates-participants | admin creates a named participant with an initial password and that participant logs in successfully | F-01 | FR-001, FR-002 | ready |
+| S-01 | admin-creates-participants | admin creates a named participant with an initial password and that participant logs in successfully | F-01 | FR-001, FR-002 | done |
 | S-02 | tournament-and-matches | admin creates the tournament and populates its match list (one-by-one or via bulk paste), and edits matches before kickoff | F-01 | FR-006, FR-007, FR-008, FR-022 | done |
 | S-03 | prediction-with-blindness | participant submits and edits a prediction before kickoff; only the predictor can see it; after kickoff editing is blocked | F-01, S-02 | US-01, FR-011, FR-012, FR-013, FR-014, FR-015, FR-017 | proposed |
 | S-04 | results-scoring-leaderboard | admin enters/corrects a result, per-prediction points compute correctly, post-kickoff predictions become visible, the leaderboard ranks all participants | F-01, S-02, S-03 | US-02, FR-009, FR-010, FR-016, FR-018, FR-019, FR-020 | proposed |
@@ -89,7 +89,7 @@ What's already in place in the codebase as of 2026-05-28 (auto-researched + user
 - **Unknowns:**
   - Which Supabase API surface backs admin-creates-participant? The Supabase admin API requires the service-role key, but `AGENTS.md` flags service-role as a hard guard because it bypasses RLS and would silently break FR-015. The likely shape is a server-only endpoint that uses the service-role key in a tightly scoped context limited to participant creation (never reading predictions). Owner: `/10x-plan`. Block: no.
 - **Risk:** misuse of the service-role key in this slice (e.g., reusing the same client elsewhere) is the single most likely path to breaking FR-015 blindness. Scoping the service-role surface to one server-only function and asserting it in code review is the mitigation.
-- **Status:** ready
+- **Status:** done
 
 ### S-02: Admin creates the tournament and adds matches
 
@@ -129,7 +129,7 @@ What's already in place in the codebase as of 2026-05-28 (auto-researched + user
 - **Blockers:** —
 - **Unknowns:**
   - Scoring computation strategy: a Postgres view that computes points on read (always-correct, never stale, more read cost) vs. a materialized score column written when a result is entered/corrected (faster reads, has to be invalidated on every result edit). Owner: `/10x-plan`. Block: no.
-  - Leaderboard tie-break rule: the PRD declares "ranked by total points" but doesn't disambiguate ties. Owner: user. Block: no — sensible default ("alphabetical") can land and be revisited. Adding to `## Open Roadmap Questions`.
+  - Leaderboard tie-break rule: **RESOLVED 2026-05-28 (#9).** Rank by total points; break ties by exact-score-prediction count (more 3-pointers wins); if still tied, alphabetical by participant name (case-insensitive, ascending). See `## Open Roadmap Questions` §1.
 - **Risk:** scoring correctness is the second `## Success Criteria` guardrail. An off-by-one in the goal-difference branch of FR-018 silently rewards or penalizes participants; the rule is small enough to be unit-tested exhaustively against a 4×4 grid of sample (prediction, result) pairs, and that test pinning is the mitigation.
 - **Status:** proposed
 
@@ -154,7 +154,7 @@ What's already in place in the codebase as of 2026-05-28 (auto-researched + user
 - **Parallel with:** S-05, S-07
 - **Blockers:** —
 - **Unknowns:**
-  - Delete shape: hard cascade-delete vs. soft-delete with the row hidden from leaderboard/history queries. FR-004 reads as hard delete; soft-delete preserves audit trail. Owner: user. Block: no.
+  - Delete shape: **RESOLVED 2026-05-28 (#10).** Cascade-delete — hard delete of the participant row plus their predictions and earned points. See `## Open Roadmap Questions` §2.
 - **Risk:** a deletion that doesn't cascade through to the leaderboard would leave a "ghost" entry — confusing but not security-breaking. Asserting absence in an integration test after delete is the mitigation.
 - **Status:** proposed
 
@@ -185,8 +185,10 @@ What's already in place in the codebase as of 2026-05-28 (auto-researched + user
 
 ## Open Roadmap Questions
 
-1. **Leaderboard tie-break rule.** The PRD declares ranking by total points but doesn't disambiguate ties. Owner: user. Block: `S-04` only weakly — a sensible default (alphabetical by name) can land and be revisited based on first-tournament feedback.
-2. **Soft-delete vs. cascade-delete on participant removal (FR-004).** PRD wording reads as hard delete; soft-delete would preserve an audit trail at the cost of more nuanced query filtering. Owner: user. Block: `S-06` only.
+_All roadmap questions resolved. Decisions recorded inline below and reflected in the PRD FRs and owning slices._
+
+1. **Leaderboard tie-break rule.** ✅ **RESOLVED 2026-05-28 ([#9](https://github.com/michaemem/bet-cup/issues/9)).** Rank by total points; break ties by exact-score-prediction count (more 3-pointers wins); if a tie remains, fall back to alphabetical by participant name (case-insensitive, ascending). Reflected in `S-04` and PRD FR-020.
+2. **Soft-delete vs. cascade-delete on participant removal (FR-004).** ✅ **RESOLVED 2026-05-28 ([#10](https://github.com/michaemem/bet-cup/issues/10)).** Cascade-delete — a hard delete of the participant row plus their predictions and earned points (no soft-delete / audit trail in MVP scope). Reflected in `S-06` and PRD FR-004.
 
 ## Parked
 
@@ -203,6 +205,7 @@ What's already in place in the codebase as of 2026-05-28 (auto-researched + user
 
 - **F-01: (foundation) every non-public route redirects unauthenticated visitors to `/auth/signin`; the data model has a `profiles`+`role` split distinguishing admin from participant; the single admin is seeded; the existing self-registration endpoint and UI are removed; subsequent slices have a reliable migration + type-generation contract to build on.** — Archived 2026-06-03 → `context/archive/2026-05-28-identity-boundary/`. Lesson: —.
 - **S-02: admin creates the (single) tournament with a name, populates its match list either by entering matches one-by-one (home, away, kickoff) or by pasting a multi-line list in a fixed format with parsed-preview-then-confirm, and edits any match's teams or kickoff before that match's kickoff.** — Archived 2026-06-03 → `context/archive/2026-06-01-tournament-and-matches/`. Lesson: —.
+- **S-01: admin creates a named participant by entering name, login, and an initial password; the participant logs in successfully on the next attempt with those credentials.** — Archived 2026-06-04 → `context/archive/2026-06-03-admin-creates-participants/`. Lesson: —.
 
 ## GitHub issues
 
@@ -223,10 +226,10 @@ Migrated to [`michaemem/bet-cup`](https://github.com/michaemem/bet-cup) GitHub I
 
 ### Open Roadmap Questions
 
-| Roadmap section | Question | Issue |
-| --- | --- | --- |
-| `## Open Roadmap Questions` §1 | Leaderboard tie-break rule | [#9](https://github.com/michaemem/bet-cup/issues/9) |
-| `## Open Roadmap Questions` §2 | Soft-delete vs. cascade-delete on participant removal (FR-004) | [#10](https://github.com/michaemem/bet-cup/issues/10) |
+| Roadmap section | Question | Issue | Status |
+| --- | --- | --- | --- |
+| `## Open Roadmap Questions` §1 | Leaderboard tie-break rule | [#9](https://github.com/michaemem/bet-cup/issues/9) | closed — total points, then most exact-score predictions, then alphabetical |
+| `## Open Roadmap Questions` §2 | Soft-delete vs. cascade-delete on participant removal (FR-004) | [#10](https://github.com/michaemem/bet-cup/issues/10) | closed — cascade-delete |
 
 ### Labels in use
 

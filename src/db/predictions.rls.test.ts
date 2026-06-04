@@ -1,0 +1,246 @@
+/**
+ * Live-DB RLS integration test for S-03 (predictions) — the FR-015/FR-017
+ * blindness invariant and the FR-014 kickoff write-lock.
+ *
+ * RLS is enforced by Postgres, NOT the Supabase client, so this hits a REAL
+ * local Supabase stack (`npx supabase start`) with per-role sessions. Unlike
+ * `matches.rls.test.ts` it creates TWO participants (A and B) to prove that one
+ * participant cannot read another's pre-kickoff prediction — and that the admin
+ * cannot either (the admin is just a participant here, FR-017).
+ *
+ * Proven boundaries:
+ *   (a) owner reads their own pre-kickoff prediction (1 row),
+ *   (b) a second participant reading A's pre-kickoff prediction gets 0 rows,
+ *   (c) the admin reading A's pre-kickoff prediction gets 0 rows (no exemption),
+ *   (d) after kickoff every authenticated user can read the prediction,
+ *   (e) the owner cannot write a prediction once the match has kicked off
+ *       (INSERT denied, UPDATE filtered to zero rows), but can before,
+ *   (f) one row per (predictor, match) — a duplicate INSERT conflicts.
+ *
+ * Self-skips unless the DB URL AND both keys are set, so default `npm test`
+ * skips it. Run locally:
+ *
+ *   SUPABASE_DB_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres \
+ *   SUPABASE_URL=http://127.0.0.1:54321 \
+ *   SUPABASE_ANON_KEY=<Publishable key> \
+ *   SUPABASE_SERVICE_ROLE_KEY=<Secret key> \
+ *   npm test -- predictions.rls
+ */
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import type { Database } from "@/db/database.types";
+
+const SUPABASE_URL = process.env.SUPABASE_URL ?? "http://127.0.0.1:54321";
+const ANON_KEY = process.env.SUPABASE_ANON_KEY ?? "";
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+
+const dbConfigured = Boolean(process.env.SUPABASE_DB_URL && ANON_KEY && SERVICE_ROLE_KEY);
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "admin@betcup.local";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "local-only";
+
+const STAMP = Date.now().toString();
+const PARTICIPANT_A_EMAIL = `rls-pred-a-${STAMP}@betcup.local`;
+const PARTICIPANT_B_EMAIL = `rls-pred-b-${STAMP}@betcup.local`;
+const PARTICIPANT_PASSWORD = "participant-only";
+
+function freshClient(key: string): SupabaseClient<Database> {
+  return createClient<Database>(SUPABASE_URL, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
+async function signedInClient(email: string, password: string): Promise<SupabaseClient<Database>> {
+  const client = freshClient(ANON_KEY);
+  const { error } = await client.auth.signInWithPassword({ email, password });
+  if (error) throw new Error(`sign-in failed for ${email}: ${error.message}`);
+  return client;
+}
+
+describe.skipIf(!dbConfigured)("predictions RLS — blindness + write-lock (live DB)", () => {
+  let service: SupabaseClient<Database>;
+  let admin: SupabaseClient<Database>;
+  let participantA: SupabaseClient<Database>;
+  let participantB: SupabaseClient<Database>;
+  let aUserId: string;
+  let bUserId: string;
+  let tournamentId: string;
+  let futureMatchId: string;
+  let pastMatchId: string;
+  let pastMatchId2: string;
+
+  beforeAll(async () => {
+    service = freshClient(SERVICE_ROLE_KEY);
+
+    const { data: createdA, error: aErr } = await service.auth.admin.createUser({
+      email: PARTICIPANT_A_EMAIL,
+      password: PARTICIPANT_PASSWORD,
+      email_confirm: true,
+    });
+    if (aErr) throw new Error(`participant A create failed: ${aErr.message}`);
+    aUserId = createdA.user.id;
+
+    const { data: createdB, error: bErr } = await service.auth.admin.createUser({
+      email: PARTICIPANT_B_EMAIL,
+      password: PARTICIPANT_PASSWORD,
+      email_confirm: true,
+    });
+    if (bErr) throw new Error(`participant B create failed: ${bErr.message}`);
+    bUserId = createdB.user.id;
+
+    admin = await signedInClient(ADMIN_EMAIL, ADMIN_PASSWORD);
+    participantA = await signedInClient(PARTICIPANT_A_EMAIL, PARTICIPANT_PASSWORD);
+    participantB = await signedInClient(PARTICIPANT_B_EMAIL, PARTICIPANT_PASSWORD);
+
+    const tour = await admin
+      .from("tournaments")
+      .insert({ name: "Predictions RLS Cup", time_zone: "Europe/Warsaw" })
+      .select("id")
+      .single();
+    if (tour.error) throw new Error(`tournament insert failed: ${tour.error.message}`);
+    tournamentId = tour.data.id;
+
+    const future = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    const past = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    futureMatchId = await seedMatch(future, "Future", "Match");
+    pastMatchId = await seedMatch(past, "Past", "Match");
+    pastMatchId2 = await seedMatch(past, "Past", "Two");
+
+    // A predicts the FUTURE match through A's own session (the real INSERT path,
+    // allowed because the match has not kicked off).
+    const ownWrite = await participantA
+      .from("predictions")
+      .insert({ predictor_id: aUserId, match_id: futureMatchId, home_goals: 1, away_goals: 2 })
+      .select("id");
+    if (ownWrite.error) throw new Error(`A future prediction insert failed: ${ownWrite.error.message}`);
+
+    // A's prediction on the PAST match is seeded via service-role (bypasses RLS):
+    // the INSERT policy would correctly refuse it post-kickoff, but we need an
+    // existing row to prove the post-kickoff REVEAL and the UPDATE lock.
+    const seedPast = await service
+      .from("predictions")
+      .insert({ predictor_id: aUserId, match_id: pastMatchId, home_goals: 3, away_goals: 0 })
+      .select("id");
+    if (seedPast.error) throw new Error(`A past prediction seed failed: ${seedPast.error.message}`);
+  });
+
+  afterAll(async () => {
+    if (tournamentId) await service.from("tournaments").delete().eq("id", tournamentId);
+    if (aUserId) await service.auth.admin.deleteUser(aUserId);
+    if (bUserId) await service.auth.admin.deleteUser(bUserId);
+  });
+
+  /** Admin-seeds one match and returns its id. */
+  async function seedMatch(kickoffIso: string, home: string, away: string): Promise<string> {
+    const res = await admin
+      .from("matches")
+      .insert({ tournament_id: tournamentId, home_team: home, away_team: away, kickoff_time: kickoffIso })
+      .select("id")
+      .single();
+    if (res.error) throw new Error(`seed match failed: ${res.error.message}`);
+    return res.data.id;
+  }
+
+  it("lets the owner read their own pre-kickoff prediction (1 row)", async () => {
+    const { data, error } = await participantA
+      .from("predictions")
+      .select("home_goals, away_goals")
+      .eq("match_id", futureMatchId)
+      .eq("predictor_id", aUserId);
+
+    expect(error).toBeNull();
+    expect(data).toHaveLength(1);
+    expect(data?.[0]).toEqual({ home_goals: 1, away_goals: 2 });
+  });
+
+  it("hides A's pre-kickoff prediction from a second participant (0 rows)", async () => {
+    const { data, error } = await participantB
+      .from("predictions")
+      .select("id")
+      .eq("match_id", futureMatchId)
+      .eq("predictor_id", aUserId);
+
+    expect(error).toBeNull();
+    expect(data ?? []).toHaveLength(0);
+  });
+
+  it("hides A's pre-kickoff prediction from the admin (0 rows — no admin exemption)", async () => {
+    const { data, error } = await admin
+      .from("predictions")
+      .select("id")
+      .eq("match_id", futureMatchId)
+      .eq("predictor_id", aUserId);
+
+    expect(error).toBeNull();
+    expect(data ?? []).toHaveLength(0);
+  });
+
+  it("reveals A's prediction to a second participant AFTER kickoff (1 row)", async () => {
+    const { data, error } = await participantB
+      .from("predictions")
+      .select("home_goals, away_goals")
+      .eq("match_id", pastMatchId)
+      .eq("predictor_id", aUserId);
+
+    expect(error).toBeNull();
+    expect(data).toHaveLength(1);
+    expect(data?.[0]).toEqual({ home_goals: 3, away_goals: 0 });
+  });
+
+  it("reveals A's prediction to the admin AFTER kickoff (1 row)", async () => {
+    const { data, error } = await admin
+      .from("predictions")
+      .select("home_goals, away_goals")
+      .eq("match_id", pastMatchId)
+      .eq("predictor_id", aUserId);
+
+    expect(error).toBeNull();
+    expect(data).toHaveLength(1);
+    expect(data?.[0]).toEqual({ home_goals: 3, away_goals: 0 });
+  });
+
+  it("denies the owner inserting a prediction on a kicked-off match (RLS WITH CHECK)", async () => {
+    const { error } = await participantA
+      .from("predictions")
+      .insert({ predictor_id: aUserId, match_id: pastMatchId2, home_goals: 5, away_goals: 5 })
+      .select("id");
+
+    // WITH CHECK (not match_is_kicked_off) is violated → RLS error (42501).
+    expect(error).not.toBeNull();
+  });
+
+  it("denies the owner updating a prediction on a kicked-off match (RLS — zero rows)", async () => {
+    const { data, error } = await participantA
+      .from("predictions")
+      .update({ home_goals: 9, away_goals: 9 })
+      .eq("match_id", pastMatchId)
+      .eq("predictor_id", aUserId)
+      .select("id");
+
+    // UPDATE USING (not match_is_kicked_off) filters the row out → zero rows.
+    expect(error).toBeNull();
+    expect(data ?? []).toHaveLength(0);
+  });
+
+  it("lets the owner edit their prediction before kickoff (sanity — lock is not blanket)", async () => {
+    const { data, error } = await participantA
+      .from("predictions")
+      .update({ home_goals: 4, away_goals: 4 })
+      .eq("match_id", futureMatchId)
+      .eq("predictor_id", aUserId)
+      .select("home_goals, away_goals");
+
+    expect(error).toBeNull();
+    expect(data).toHaveLength(1);
+    expect(data?.[0]).toEqual({ home_goals: 4, away_goals: 4 });
+  });
+
+  it("enforces one prediction per (predictor, match) — duplicate insert conflicts", async () => {
+    const { error } = await participantA
+      .from("predictions")
+      .insert({ predictor_id: aUserId, match_id: futureMatchId, home_goals: 0, away_goals: 0 })
+      .select("id");
+
+    // unique (predictor_id, match_id) → conflict (23505).
+    expect(error).not.toBeNull();
+  });
+});
