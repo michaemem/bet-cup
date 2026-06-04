@@ -326,28 +326,28 @@ Forward-only migration (no edits to applied files). Dropping and recreating the 
 - [x] 2.3 `npm test` passes (no regressions) — 96f76dd
 
 #### Manual
-- [x] 2.4 Upsert creates then updates a single row (no duplicates)
-- [x] 2.5 Upsert on a past-kickoff match returns `FORBIDDEN`
+- [x] 2.4 Upsert creates then updates a single row (no duplicates) — c466e72
+- [x] 2.5 Upsert on a past-kickoff match returns `FORBIDDEN` — c466e72
 
 ### Phase 3: Participant predictions UI
 
 #### Automated
-- [x] 3.1 Lint + types pass: `npm run lint`
-- [x] 3.2 Build passes: `npm run build`
+- [x] 3.1 Lint + types pass: `npm run lint` — c466e72
+- [x] 3.2 Build passes: `npm run build` — c466e72
 
 #### Manual
-- [x] 3.3 `/predictions` lists matches in kickoff order with correct local times
-- [x] 3.4 Save/edit before kickoff persists; single row updates on edit
-- [x] 3.5 Past-kickoff match shows locked state, no editable form
-- [x] 3.6 `/predictions` redirects to `/auth/signin` when logged out
-- [x] 3.7 Dashboard shows the predictions link for a non-admin participant
+- [x] 3.3 `/predictions` lists matches in kickoff order with correct local times — c466e72
+- [x] 3.4 Save/edit before kickoff persists; single row updates on edit — c466e72
+- [x] 3.5 Past-kickoff match shows locked state, no editable form — c466e72
+- [x] 3.6 `/predictions` redirects to `/auth/signin` when logged out — c466e72
+- [x] 3.7 Dashboard shows the predictions link for a non-admin participant — c466e72
 
 ### Phase 4: Blindness RLS test + CI job
 
 #### Automated
-- [ ] 4.1 Local blindness test passes: `... npm test -- predictions.rls`
+- [x] 4.1 Local blindness test passes: `... npm test -- predictions.rls`
 - [ ] 4.2 CI `rls` job is green and the suite runs (not skipped)
-- [ ] 4.3 Default `npm test` (no env) still passes by skipping the live suite
+- [x] 4.3 Default `npm test` (no env) still passes by skipping the live suite
 
 #### Manual
 - [ ] 4.4 CI log confirms the predictions RLS block executed and all cases passed

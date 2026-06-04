@@ -78,8 +78,42 @@ jobs:
           fi
           echo "OK: /dashboard redirected (302)"
 
+  # Live-DB RLS gate. Boots a real local Supabase stack so the blindness
+  # invariant (S-03, FR-015/FR-017) and the matches edit-lock are continuously
+  # proven on every push/PR — the default `ci` job has no Supabase, so the
+  # `*.rls.test.ts` suites self-skip there. Keeps the blindness guarantee from
+  # silently regressing.
+  rls:
+    runs-on: ubuntu-latest
+    env:
+      ADMIN_EMAIL: admin@betcup.local
+      ADMIN_PASSWORD: local-only
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Generate local seed (admin user) from the template
+        run: node scripts/seed-template.mjs
+      - name: Start Supabase (applies migrations + seed)
+        run: supabase start
+      - name: Export Supabase connection env for the RLS tests
+        run: |
+          supabase status -o env \
+            --override-name api.url=SUPABASE_URL \
+            --override-name auth.anon_key=SUPABASE_ANON_KEY \
+            --override-name auth.service_role_key=SUPABASE_SERVICE_ROLE_KEY \
+            --override-name db.url=SUPABASE_DB_URL >> "$GITHUB_ENV"
+      - name: Run live-DB RLS integration tests
+        run: npm test -- rls
+
   deploy:
-    needs: [ci, smoke]
+    needs: [ci, smoke, rls]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     concurrency:
