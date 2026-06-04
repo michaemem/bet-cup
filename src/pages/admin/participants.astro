@@ -1,0 +1,80 @@
+---
+import { ParticipantForm } from "@/components/admin/ParticipantForm";
+import Layout from "@/layouts/Layout.astro";
+import { createClient } from "@/lib/supabase";
+
+// Admin-only surface (middleware ADMIN_ROUTES gate). Lists existing participants
+// server-side under the admin RLS policies (the admin may read all profiles);
+// the React island handles creation via the service-role Action.
+const supabase = createClient(Astro.request.headers, Astro.cookies);
+
+interface ParticipantRow {
+  displayName: string;
+  username: string;
+}
+
+let participants: ParticipantRow[] = [];
+
+const currentUser = Astro.locals.user;
+
+if (supabase && currentUser) {
+  // Exclude the admin's own row: the admin also holds the participant role
+  // (FR-017), but listing self under "existing participants" is confusing and
+  // would let S-06's future delete control target the admin. The single-admin
+  // invariant means excluding self == excluding the admin.
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("display_name, username")
+    .neq("id", currentUser.id)
+    .order("created_at", { ascending: true });
+  // Surface a read failure instead of rendering an empty list as
+  // "no participants yet", which would mislead the admin.
+  if (error) {
+    console.error("admin: failed to load participants", error);
+    return new Response("Failed to load participants", { status: 500 });
+  }
+  participants = data.map((row) => ({ displayName: row.display_name, username: row.username }));
+}
+---
+
+<Layout title="Admin — Participants">
+  <main class="mx-auto max-w-3xl space-y-10 p-6">
+    <header>
+      <h1 class="text-2xl font-bold">Participants</h1>
+      <p class="text-muted-foreground text-sm">
+        Create participant accounts and share the generated password out-of-band.
+      </p>
+    </header>
+
+    <section class="space-y-4">
+      <h2 class="text-lg font-semibold">Existing participants</h2>
+      {
+        participants.length === 0 ? (
+          <p class="text-muted-foreground text-sm">No participants yet.</p>
+        ) : (
+          <table class="w-full text-left text-sm">
+            <thead>
+              <tr class="border-b">
+                <th class="py-2 font-medium">Name</th>
+                <th class="py-2 font-medium">Username</th>
+              </tr>
+            </thead>
+            <tbody>
+              {participants.map((p) => (
+                <tr class="border-b">
+                  <td class="py-2">{p.displayName}</td>
+                  <td class="py-2 font-mono">{p.username}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )
+      }
+    </section>
+
+    <section class="space-y-4">
+      <h2 class="text-lg font-semibold">Create a participant</h2>
+      <ParticipantForm client:load />
+    </section>
+  </main>
+</Layout>

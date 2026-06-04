@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Mail, Lock, LogIn } from "lucide-react";
+import { User, Lock, LogIn } from "lucide-react";
 import { FormField } from "@/components/auth/FormField";
 import { PasswordToggle } from "@/components/auth/PasswordToggle";
 import { SubmitButton } from "@/components/auth/SubmitButton";
@@ -10,17 +10,15 @@ interface Props {
 }
 
 export default function SignInForm({ serverError }: Props) {
-  const [email, setEmail] = useState("");
+  const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{ login?: string; password?: string }>({});
 
   function validate() {
     const next: typeof errors = {};
-    if (!email.trim()) {
-      next.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      next.email = "Enter a valid email address";
+    if (!login.trim()) {
+      next.login = "Username is required";
     }
     if (!password) {
       next.password = "Password is required";
@@ -42,17 +40,17 @@ export default function SignInForm({ serverError }: Props) {
   return (
     <form method="POST" action="/api/auth/signin" className="space-y-4" onSubmit={handleSubmit} noValidate>
       <FormField
-        id="email"
-        type="email"
-        label="Email"
-        value={email}
+        id="login"
+        type="text"
+        label="Username"
+        value={login}
         onChange={(v) => {
-          setEmail(v);
-          clearError("email");
+          setLogin(v);
+          clearError("login");
         }}
-        placeholder="you@example.com"
-        error={errors.email}
-        icon={<Mail className="size-4" />}
+        placeholder="your-username"
+        error={errors.login}
+        icon={<User className="size-4" />}
       />
 
       <FormField

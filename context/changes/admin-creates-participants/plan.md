@@ -409,32 +409,32 @@ Negligible at the 5–20-user scale: one `auth.admin.createUser` round-trip per 
 
 #### Automated
 
-- [x] 2.1 Lint/type-check clean: `npx astro sync && npm run lint`
-- [x] 2.2 Build passes: `npm run build`
-- [x] 2.3 `check:wrangler` passes
-- [x] 2.4 Unit tests pass: `npm test` (password + participant-schema suites)
-- [x] 2.5 `SUPABASE_SERVICE_ROLE_KEY` read in exactly one module (`rg` returns only `src/lib/supabase-admin.ts`)
-- [x] 2.6 `createAdminAuthClient` has exactly one importer (`rg` returns only `src/actions/index.ts`)
+- [x] 2.1 Lint/type-check clean: `npx astro sync && npm run lint` — b8386e6
+- [x] 2.2 Build passes: `npm run build` — b8386e6
+- [x] 2.3 `check:wrangler` passes — b8386e6
+- [x] 2.4 Unit tests pass: `npm test` (password + participant-schema suites) — b8386e6
+- [x] 2.5 `SUPABASE_SERVICE_ROLE_KEY` read in exactly one module (`rg` returns only `src/lib/supabase-admin.ts`) — b8386e6
+- [x] 2.6 `createAdminAuthClient` has exactly one importer (`rg` returns only `src/actions/index.ts`) — b8386e6
 
 #### Manual
 
-- [x] 2.7 Action reachable with the local service-role key; returns generic not-configured error without it (no crash)
+- [x] 2.7 Action reachable with the local service-role key; returns generic not-configured error without it (no crash) — b8386e6
 
 ### Phase 3: UI layer — username sign-in, /admin/participants page + island
 
 #### Automated
 
-- [ ] 3.1 Lint/type-check clean: `npx astro sync && npm run lint`
-- [ ] 3.2 Build passes: `npm run build`
-- [ ] 3.3 `check:wrangler` passes
+- [x] 3.1 Lint/type-check clean: `npx astro sync && npm run lint`
+- [x] 3.2 Build passes: `npm run build`
+- [x] 3.3 `check:wrangler` passes
 
 #### Manual
 
-- [ ] 3.4 `/admin/participants` lists participants and shows the create form (as admin)
-- [ ] 3.5 Create shows the reveal panel (username + strong password + working Copy); list does not reload until "Create another"
-- [ ] 3.6 Non-admin visiting `/admin/participants` is redirected to `/dashboard`
-- [ ] 3.7 Sign-in form shows a "Username" field
-- [ ] 3.8 Invalid username shows an inline field error before any server round-trip
+- [x] 3.4 `/admin/participants` lists participants and shows the create form (as admin)
+- [x] 3.5 Create shows the reveal panel (username + strong password + working Copy); list does not reload until "Create another"
+- [x] 3.6 Non-admin visiting `/admin/participants` is redirected to `/dashboard`
+- [x] 3.7 Sign-in form shows a "Username" field
+- [x] 3.8 Invalid username shows an inline field error before any server round-trip
 
 ### Phase 4: Integration tests + CI
 
