@@ -8,3 +8,10 @@
 - **Problem**: These files weren't in the plan's "Changes Required", so they read as scope creep during implementation review, even though each is a benign, necessary support change (lint ignores for generated/shadcn output, local Supabase auth config to enable sign-in + the RLS test, a transitive shadcn primitive pulled in by `form.tsx`, and an F-01 security hardening carry-over).
 - **Rule**: _<to fill>_
 - **Applies to**: _<to fill>_
+
+## Isolation criteria should target production reads, not literal grep across src/
+
+- **Context**: S-01 Phase 2 criterion `rg "SUPABASE_SERVICE_ROLE_KEY" src` was meant to return only `src/lib/supabase-admin.ts`. After Phase 4, it also matches `src/actions/participants.test.ts` and the pre-existing `src/db/matches.rls.test.ts`.
+- **Problem**: Those test harnesses reference the secret's *name* via `process.env` (not the production `astro:env/server` read), so a literal grep-across-`src` isolation check picks them up and reports a false softening — even though the real production invariant (one `astro:env/server` reader, one importer) still holds.
+- **Rule**: Phrase secret-isolation success criteria against production reads — exclude test files (e.g. `rg --glob '!*.test.*'`) or assert the importer/reader count rather than a raw substring match across `src/`.
+- **Applies to**: Any plan criterion that greps for a secret or identifier to prove isolation/single-ownership.

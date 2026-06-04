@@ -1,18 +1,19 @@
 import type { APIRoute } from "astro";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase";
+import { synthEmail } from "@/lib/username";
 
 export const prerender = false;
 
 const SigninSchema = z.object({
-  email: z.email(),
+  login: z.string().trim().min(1),
   password: z.string().min(6),
 });
 
 export const POST: APIRoute = async (context) => {
   const form = await context.request.formData();
   const parsed = SigninSchema.safeParse({
-    email: form.get("email"),
+    login: form.get("login"),
     password: form.get("password"),
   });
 
@@ -26,9 +27,18 @@ export const POST: APIRoute = async (context) => {
     return context.redirect(`/auth/signin?error=${encodeURIComponent("Supabase is not configured")}`);
   }
 
-  const { error } = await supabase.auth.signInWithPassword(parsed.data);
+  // Participants log in with a bare username -> synthetic email; an input
+  // containing "@" is treated as a literal email (passthrough for the seeded
+  // admin, whose ADMIN_EMAIL may not end in @betcup.local).
+  const email = parsed.data.login.includes("@") ? parsed.data.login : synthEmail(parsed.data.login);
+
+  const { error } = await supabase.auth.signInWithPassword({ email, password: parsed.data.password });
   if (error) {
-    return context.redirect(`/auth/signin?error=${encodeURIComponent(error.message)}`);
+    // Log the raw GoTrue error server-side but show a generic message: the raw
+    // string could otherwise hint at the synthetic-email scheme, and a specific
+    // message reveals whether a username exists.
+    console.error("signin failed", error);
+    return context.redirect(`/auth/signin?error=${encodeURIComponent("Invalid username or password.")}`);
   }
 
   return context.redirect("/dashboard");

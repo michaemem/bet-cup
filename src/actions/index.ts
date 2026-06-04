@@ -2,9 +2,13 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AstroCookies } from "astro";
 import { ActionError, defineAction } from "astro:actions";
 import type { Database } from "@/db/database.types";
+import { generatePassword } from "@/lib/password";
 import { matchBulkSchema, matchInputSchema, matchUpdateSchema } from "@/lib/schemas/match";
+import { participantCreateSchema } from "@/lib/schemas/participant";
 import { tournamentSchema } from "@/lib/schemas/tournament";
 import { createClient } from "@/lib/supabase";
+import { createAdminAuthClient } from "@/lib/supabase-admin";
+import { synthEmail } from "@/lib/username";
 
 /**
  * Astro Actions for S-02. Actions are PUBLIC endpoints (`/_actions/<name>`), so
@@ -30,6 +34,30 @@ function internalError(error: unknown): ActionError {
   return new ActionError({ code: "INTERNAL_SERVER_ERROR", message: GENERIC_DB_ERROR });
 }
 
+/**
+ * Build a field-scoped input error from inside a handler. Astro only constructs
+ * an `ActionInputError` during the input-schema validation step and does not
+ * export the class, so to flag a specific field after the schema has passed we
+ * stamp an `ActionError` with the documented `AstroActionInputError` serialized
+ * shape (`type` + `issues` + `fields`). The client's `isInputError()` reads this
+ * shape and rebuilds `error.fields`, so callers map it exactly like a Zod field
+ * error (see `ParticipantForm`).
+ */
+function inputError(field: string, message: string): ActionError {
+  return Object.assign(new ActionError({ code: "BAD_REQUEST", message }), {
+    type: "AstroActionInputError",
+    issues: [{ code: "custom", path: [field], message }],
+    fields: { [field]: [message] },
+  });
+}
+
+/** Throw UNAUTHORIZED unless the caller holds the admin role. */
+function requireAdmin(locals: App.Locals): void {
+  if (!locals.profile?.roles.includes("admin")) {
+    throw new ActionError({ code: "UNAUTHORIZED", message: "Admin access required" });
+  }
+}
+
 interface AdminContext {
   locals: App.Locals;
   request: Request;
@@ -38,9 +66,7 @@ interface AdminContext {
 
 /** Build a request-scoped Supabase client, refusing non-admin callers. */
 function adminClient(context: AdminContext): SupabaseClient<Database> {
-  if (!context.locals.profile?.roles.includes("admin")) {
-    throw new ActionError({ code: "UNAUTHORIZED", message: "Admin access required" });
-  }
+  requireAdmin(context.locals);
   const supabase = createClient(context.request.headers, context.cookies);
   if (!supabase) {
     throw new ActionError({ code: "INTERNAL_SERVER_ERROR", message: NOT_CONFIGURED });
@@ -72,6 +98,50 @@ function assertTournamentZone(inputZone: string, tournamentZone: string): void {
 }
 
 export const server = {
+  participants: {
+    /**
+     * Admin-only participant creation (FR-001). Creates the auth user via the
+     * isolated service-role client (the ONLY use of that client); the F-01
+     * `handle_new_user` trigger then seeds the profile (with `username` from
+     * metadata) + `participant` role — nothing is written via the anon client,
+     * so `adminClient` is deliberately NOT used here. The generated password is
+     * returned once for the admin to share out-of-band; it is never stored.
+     */
+    create: defineAction({
+      accept: "json",
+      input: participantCreateSchema,
+      handler: async (input, context) => {
+        requireAdmin(context.locals);
+
+        const admin = createAdminAuthClient();
+        if (!admin) {
+          throw new ActionError({ code: "INTERNAL_SERVER_ERROR", message: NOT_CONFIGURED });
+        }
+
+        const password = generatePassword();
+        const { error } = await admin.auth.admin.createUser({
+          email: synthEmail(input.username),
+          password,
+          email_confirm: true,
+          user_metadata: { display_name: input.name, username: input.username },
+        });
+
+        if (error) {
+          // GoTrue returns code "email_exists" (HTTP 422) for an already-
+          // registered email. Confirmed against the local stack in Phase 2 and
+          // pinned by the Phase 4 duplicate test. Map it to a friendly field
+          // error on `username`; never surface the raw message (it would reveal
+          // the synthetic-email scheme). Anything else is a generic 500.
+          if (error.code === "email_exists" || error.status === 422) {
+            throw inputError("username", "That username is taken.");
+          }
+          throw internalError(error);
+        }
+
+        return { username: input.username, password };
+      },
+    }),
+  },
   tournament: {
     /** Singleton create-or-edit: update the existing tournament, else insert. */
     upsert: defineAction({
