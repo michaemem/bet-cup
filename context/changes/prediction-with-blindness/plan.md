@@ -345,10 +345,10 @@ Forward-only migration (no edits to applied files). Dropping and recreating the 
 ### Phase 4: Blindness RLS test + CI job
 
 #### Automated
-- [x] 4.1 Local blindness test passes: `... npm test -- predictions.rls`
-- [ ] 4.2 CI `rls` job is green and the suite runs (not skipped)
-- [x] 4.3 Default `npm test` (no env) still passes by skipping the live suite
+- [x] 4.1 Local blindness test passes: `... npm test -- predictions.rls` — cecad8c
+- [x] 4.2 CI `rls` job is green and the suite runs (not skipped) — 16b116f
+- [x] 4.3 Default `npm test` (no env) still passes by skipping the live suite — cecad8c
 
 #### Manual
-- [ ] 4.4 CI log confirms the predictions RLS block executed and all cases passed
-- [ ] 4.5 Two-account manual check confirms blindness pre-kickoff and reveal post-kickoff
+- [x] 4.4 CI log confirms the predictions RLS block executed and all cases passed — 16b116f
+- [x] 4.5 Two-account manual check confirms blindness pre-kickoff and reveal post-kickoff — c466e72
