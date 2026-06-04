@@ -395,30 +395,30 @@ Negligible at the 5–20-user scale: one `auth.admin.createUser` round-trip per 
 
 #### Automated
 
-- [x] 1.1 Migration applies cleanly: `npm run db:reset` completes without error
-- [x] 1.2 Types regenerate: `npm run db:types` exits 0 and `profiles` gains a `username` field
-- [x] 1.3 Type-check/lint clean: `npx astro sync && npm run lint`
-- [x] 1.4 After reset, the admin row has a non-null `username` (`= 'admin'`)
+- [x] 1.1 Migration applies cleanly: `npm run db:reset` completes without error — 0e4f62b
+- [x] 1.2 Types regenerate: `npm run db:types` exits 0 and `profiles` gains a `username` field — 0e4f62b
+- [x] 1.3 Type-check/lint clean: `npx astro sync && npm run lint` — 0e4f62b
+- [x] 1.4 After reset, the admin row has a non-null `username` (`= 'admin'`) — 0e4f62b
 
 #### Manual
 
-- [x] 1.5 Studio: `profiles.username` is NOT NULL with a unique lowercased index
-- [x] 1.6 A new user created with `user_metadata.username` populates `profiles.username`
+- [x] 1.5 Studio: `profiles.username` is NOT NULL with a unique lowercased index — 0e4f62b
+- [x] 1.6 A new user created with `user_metadata.username` populates `profiles.username` — 0e4f62b
 
 ### Phase 2: Server layer — service-role client, Action, schema, sign-in mapping
 
 #### Automated
 
-- [ ] 2.1 Lint/type-check clean: `npx astro sync && npm run lint`
-- [ ] 2.2 Build passes: `npm run build`
-- [ ] 2.3 `check:wrangler` passes
-- [ ] 2.4 Unit tests pass: `npm test` (password + participant-schema suites)
-- [ ] 2.5 `SUPABASE_SERVICE_ROLE_KEY` read in exactly one module (`rg` returns only `src/lib/supabase-admin.ts`)
-- [ ] 2.6 `createAdminAuthClient` has exactly one importer (`rg` returns only `src/actions/index.ts`)
+- [x] 2.1 Lint/type-check clean: `npx astro sync && npm run lint`
+- [x] 2.2 Build passes: `npm run build`
+- [x] 2.3 `check:wrangler` passes
+- [x] 2.4 Unit tests pass: `npm test` (password + participant-schema suites)
+- [x] 2.5 `SUPABASE_SERVICE_ROLE_KEY` read in exactly one module (`rg` returns only `src/lib/supabase-admin.ts`)
+- [x] 2.6 `createAdminAuthClient` has exactly one importer (`rg` returns only `src/actions/index.ts`)
 
 #### Manual
 
-- [ ] 2.7 Action reachable with the local service-role key; returns generic not-configured error without it (no crash)
+- [x] 2.7 Action reachable with the local service-role key; returns generic not-configured error without it (no crash)
 
 ### Phase 3: UI layer — username sign-in, /admin/participants page + island
 

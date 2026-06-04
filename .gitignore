@@ -16,7 +16,8 @@ pnpm-debug.log*
 # environment variables
 .env
 .env.production
-.env.example
+# .env.example is a committed template (devs copy it to .env / .dev.vars).
+!.env.example
 
 # cloudflare
 .dev.vars

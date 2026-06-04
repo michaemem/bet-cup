@@ -18,6 +18,10 @@ export default defineConfig({
     schema: {
       SUPABASE_URL: envField.string({ context: "server", access: "secret", optional: true }),
       SUPABASE_KEY: envField.string({ context: "server", access: "secret", optional: true }),
+      // Service-role (secret) key — required only for admin participant creation
+      // (auth.admin.createUser). Optional so the DB-less build + CI still pass.
+      // Read by exactly one module: src/lib/supabase-admin.ts.
+      SUPABASE_SERVICE_ROLE_KEY: envField.string({ context: "server", access: "secret", optional: true }),
     },
   },
 });
