@@ -424,27 +424,27 @@ Negligible at the 5–20-user scale: one `auth.admin.createUser` round-trip per 
 
 #### Automated
 
-- [x] 3.1 Lint/type-check clean: `npx astro sync && npm run lint`
-- [x] 3.2 Build passes: `npm run build`
-- [x] 3.3 `check:wrangler` passes
+- [x] 3.1 Lint/type-check clean: `npx astro sync && npm run lint` — d910d97
+- [x] 3.2 Build passes: `npm run build` — d910d97
+- [x] 3.3 `check:wrangler` passes — d910d97
 
 #### Manual
 
-- [x] 3.4 `/admin/participants` lists participants and shows the create form (as admin)
-- [x] 3.5 Create shows the reveal panel (username + strong password + working Copy); list does not reload until "Create another"
-- [x] 3.6 Non-admin visiting `/admin/participants` is redirected to `/dashboard`
-- [x] 3.7 Sign-in form shows a "Username" field
-- [x] 3.8 Invalid username shows an inline field error before any server round-trip
+- [x] 3.4 `/admin/participants` lists participants and shows the create form (as admin) — d910d97
+- [x] 3.5 Create shows the reveal panel (username + strong password + working Copy); list does not reload until "Create another" — d910d97
+- [x] 3.6 Non-admin visiting `/admin/participants` is redirected to `/dashboard` — d910d97
+- [x] 3.7 Sign-in form shows a "Username" field — d910d97
+- [x] 3.8 Invalid username shows an inline field error before any server round-trip — d910d97
 
 ### Phase 4: Integration tests + CI
 
 #### Automated
 
-- [ ] 4.1 `npm test` passes full suite locally with `SUPABASE_SERVICE_ROLE_KEY` set
-- [ ] 4.2 `npm test` stays green in CI (integration skips cleanly without the service-role key; unit + guard run)
-- [ ] 4.3 Lint + build still pass
+- [x] 4.1 `npm test` passes full suite locally with `SUPABASE_SERVICE_ROLE_KEY` set
+- [x] 4.2 `npm test` stays green in CI (integration skips cleanly without the service-role key; unit + guard run)
+- [x] 4.3 Lint + build still pass
 
 #### Manual
 
-- [ ] 4.4 Full loop: create `bob` → sign out → sign in as `bob` → `/dashboard`; re-create `bob` → "That username is taken."
+- [x] 4.4 Full loop: create `bob` → sign out → sign in as `bob` → `/dashboard`; re-create `bob` → "That username is taken."
 - [ ] 4.5 CI run on the PR is green (`smoke` + `ci` jobs)
