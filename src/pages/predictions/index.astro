@@ -1,0 +1,87 @@
+---
+import { PredictionList, type PredictionMatchRow } from "@/components/predictions/PredictionList";
+import Layout from "@/layouts/Layout.astro";
+import { createClient } from "@/lib/supabase";
+import { formatInZone } from "@/lib/time";
+
+// Participant surface (middleware default-deny gate — no admin role required).
+// Reads the fixtures + the caller's OWN predictions server-side under RLS: the
+// blindness invariant means a participant never receives another participant's
+// pre-kickoff prediction, so this query is safe to render verbatim.
+const supabase = createClient(Astro.request.headers, Astro.cookies);
+const userId = Astro.locals.user?.id ?? null;
+
+let tournamentName: string | null = null;
+let matchRows: PredictionMatchRow[] = [];
+
+if (supabase && userId) {
+  const { data: tournament, error: tournamentError } = await supabase
+    .from("tournaments")
+    .select("id, name, time_zone")
+    .limit(1)
+    .maybeSingle();
+  if (tournamentError) {
+    console.error("predictions: failed to load tournament", tournamentError);
+    return new Response("Failed to load tournament", { status: 500 });
+  }
+
+  if (tournament) {
+    const zone = tournament.time_zone;
+    tournamentName = tournament.name;
+
+    const { data: matches, error: matchesError } = await supabase
+      .from("matches")
+      .select("id, home_team, away_team, kickoff_time")
+      .order("kickoff_time", { ascending: true });
+    if (matchesError) {
+      console.error("predictions: failed to load matches", matchesError);
+      return new Response("Failed to load matches", { status: 500 });
+    }
+
+    // Only the caller's own predictions: the owner branch of predictions_select
+    // returns these regardless of kickoff; the eq() keeps any post-kickoff rows
+    // from other participants out of this view.
+    const { data: predictions, error: predictionsError } = await supabase
+      .from("predictions")
+      .select("match_id, home_goals, away_goals")
+      .eq("predictor_id", userId);
+    if (predictionsError) {
+      console.error("predictions: failed to load predictions", predictionsError);
+      return new Response("Failed to load predictions", { status: 500 });
+    }
+
+    const byMatch = new Map(predictions.map((p) => [p.match_id, p]));
+    const now = Date.now();
+    matchRows = matches.map((match) => {
+      const utc = new Date(match.kickoff_time);
+      const prediction = byMatch.get(match.id);
+      return {
+        id: match.id,
+        homeTeam: match.home_team,
+        awayTeam: match.away_team,
+        kickoffLocal: formatInZone(utc, zone),
+        isPast: utc.getTime() <= now,
+        prediction: prediction ? { homeGoals: prediction.home_goals, awayGoals: prediction.away_goals } : null,
+      };
+    });
+  }
+}
+---
+
+<Layout title="Predictions">
+  <main class="mx-auto max-w-3xl space-y-6 p-6">
+    <header>
+      <h1 class="text-2xl font-bold">Predictions</h1>
+      <p class="text-muted-foreground text-sm">
+        {
+          tournamentName
+            ? `Enter your score for each match before it kicks off. Only you can see your predictions until kickoff.`
+            : "No tournament has been set up yet."
+        }
+      </p>
+      <a href="/dashboard" class="mt-2 inline-block text-sm underline">Back to dashboard</a>
+    </header>
+
+    {tournamentName && <PredictionList matches={matchRows} client:load />}
+  </main>
+</Layout>

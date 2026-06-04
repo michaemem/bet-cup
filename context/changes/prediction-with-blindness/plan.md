@@ -321,26 +321,26 @@ Forward-only migration (no edits to applied files). Dropping and recreating the 
 ### Phase 2: Prediction schema + upsert Action
 
 #### Automated
-- [x] 2.1 Lint + types pass: `npm run lint`
-- [x] 2.2 Build passes: `npm run build`
-- [x] 2.3 `npm test` passes (no regressions)
+- [x] 2.1 Lint + types pass: `npm run lint` — 96f76dd
+- [x] 2.2 Build passes: `npm run build` — 96f76dd
+- [x] 2.3 `npm test` passes (no regressions) — 96f76dd
 
 #### Manual
-- [ ] 2.4 Upsert creates then updates a single row (no duplicates)
-- [ ] 2.5 Upsert on a past-kickoff match returns `FORBIDDEN`
+- [x] 2.4 Upsert creates then updates a single row (no duplicates)
+- [x] 2.5 Upsert on a past-kickoff match returns `FORBIDDEN`
 
 ### Phase 3: Participant predictions UI
 
 #### Automated
-- [ ] 3.1 Lint + types pass: `npm run lint`
-- [ ] 3.2 Build passes: `npm run build`
+- [x] 3.1 Lint + types pass: `npm run lint`
+- [x] 3.2 Build passes: `npm run build`
 
 #### Manual
-- [ ] 3.3 `/predictions` lists matches in kickoff order with correct local times
-- [ ] 3.4 Save/edit before kickoff persists; single row updates on edit
-- [ ] 3.5 Past-kickoff match shows locked state, no editable form
-- [ ] 3.6 `/predictions` redirects to `/auth/signin` when logged out
-- [ ] 3.7 Dashboard shows the predictions link for a non-admin participant
+- [x] 3.3 `/predictions` lists matches in kickoff order with correct local times
+- [x] 3.4 Save/edit before kickoff persists; single row updates on edit
+- [x] 3.5 Past-kickoff match shows locked state, no editable form
+- [x] 3.6 `/predictions` redirects to `/auth/signin` when logged out
+- [x] 3.7 Dashboard shows the predictions link for a non-admin participant
 
 ### Phase 4: Blindness RLS test + CI job
 
