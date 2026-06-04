@@ -395,15 +395,15 @@ Negligible at the 5–20-user scale: one `auth.admin.createUser` round-trip per 
 
 #### Automated
 
-- [ ] 1.1 Migration applies cleanly: `npm run db:reset` completes without error
-- [ ] 1.2 Types regenerate: `npm run db:types` exits 0 and `profiles` gains a `username` field
-- [ ] 1.3 Type-check/lint clean: `npx astro sync && npm run lint`
-- [ ] 1.4 After reset, the admin row has a non-null `username` (`= 'admin'`)
+- [x] 1.1 Migration applies cleanly: `npm run db:reset` completes without error
+- [x] 1.2 Types regenerate: `npm run db:types` exits 0 and `profiles` gains a `username` field
+- [x] 1.3 Type-check/lint clean: `npx astro sync && npm run lint`
+- [x] 1.4 After reset, the admin row has a non-null `username` (`= 'admin'`)
 
 #### Manual
 
-- [ ] 1.5 Studio: `profiles.username` is NOT NULL with a unique lowercased index
-- [ ] 1.6 A new user created with `user_metadata.username` populates `profiles.username`
+- [x] 1.5 Studio: `profiles.username` is NOT NULL with a unique lowercased index
+- [x] 1.6 A new user created with `user_metadata.username` populates `profiles.username`
 
 ### Phase 2: Server layer — service-role client, Action, schema, sign-in mapping
 
