@@ -129,7 +129,7 @@ What's already in place in the codebase as of 2026-05-28 (auto-researched + user
 - **Blockers:** —
 - **Unknowns:**
   - Scoring computation strategy: a Postgres view that computes points on read (always-correct, never stale, more read cost) vs. a materialized score column written when a result is entered/corrected (faster reads, has to be invalidated on every result edit). Owner: `/10x-plan`. Block: no.
-  - Leaderboard tie-break rule: the PRD declares "ranked by total points" but doesn't disambiguate ties. Owner: user. Block: no — sensible default ("alphabetical") can land and be revisited. Adding to `## Open Roadmap Questions`.
+  - Leaderboard tie-break rule: **RESOLVED 2026-05-28 (#9).** Rank by total points; break ties by exact-score-prediction count (more 3-pointers wins); if still tied, alphabetical by participant name (case-insensitive, ascending). See `## Open Roadmap Questions` §1.
 - **Risk:** scoring correctness is the second `## Success Criteria` guardrail. An off-by-one in the goal-difference branch of FR-018 silently rewards or penalizes participants; the rule is small enough to be unit-tested exhaustively against a 4×4 grid of sample (prediction, result) pairs, and that test pinning is the mitigation.
 - **Status:** proposed
 
@@ -154,7 +154,7 @@ What's already in place in the codebase as of 2026-05-28 (auto-researched + user
 - **Parallel with:** S-05, S-07
 - **Blockers:** —
 - **Unknowns:**
-  - Delete shape: hard cascade-delete vs. soft-delete with the row hidden from leaderboard/history queries. FR-004 reads as hard delete; soft-delete preserves audit trail. Owner: user. Block: no.
+  - Delete shape: **RESOLVED 2026-05-28 (#10).** Cascade-delete — hard delete of the participant row plus their predictions and earned points. See `## Open Roadmap Questions` §2.
 - **Risk:** a deletion that doesn't cascade through to the leaderboard would leave a "ghost" entry — confusing but not security-breaking. Asserting absence in an integration test after delete is the mitigation.
 - **Status:** proposed
 
@@ -185,8 +185,10 @@ What's already in place in the codebase as of 2026-05-28 (auto-researched + user
 
 ## Open Roadmap Questions
 
-1. **Leaderboard tie-break rule.** The PRD declares ranking by total points but doesn't disambiguate ties. Owner: user. Block: `S-04` only weakly — a sensible default (alphabetical by name) can land and be revisited based on first-tournament feedback.
-2. **Soft-delete vs. cascade-delete on participant removal (FR-004).** PRD wording reads as hard delete; soft-delete would preserve an audit trail at the cost of more nuanced query filtering. Owner: user. Block: `S-06` only.
+_All roadmap questions resolved. Decisions recorded inline below and reflected in the PRD FRs and owning slices._
+
+1. **Leaderboard tie-break rule.** ✅ **RESOLVED 2026-05-28 ([#9](https://github.com/michaemem/bet-cup/issues/9)).** Rank by total points; break ties by exact-score-prediction count (more 3-pointers wins); if a tie remains, fall back to alphabetical by participant name (case-insensitive, ascending). Reflected in `S-04` and PRD FR-020.
+2. **Soft-delete vs. cascade-delete on participant removal (FR-004).** ✅ **RESOLVED 2026-05-28 ([#10](https://github.com/michaemem/bet-cup/issues/10)).** Cascade-delete — a hard delete of the participant row plus their predictions and earned points (no soft-delete / audit trail in MVP scope). Reflected in `S-06` and PRD FR-004.
 
 ## Parked
 
@@ -224,10 +226,10 @@ Migrated to [`michaemem/bet-cup`](https://github.com/michaemem/bet-cup) GitHub I
 
 ### Open Roadmap Questions
 
-| Roadmap section | Question | Issue |
-| --- | --- | --- |
-| `## Open Roadmap Questions` §1 | Leaderboard tie-break rule | [#9](https://github.com/michaemem/bet-cup/issues/9) |
-| `## Open Roadmap Questions` §2 | Soft-delete vs. cascade-delete on participant removal (FR-004) | [#10](https://github.com/michaemem/bet-cup/issues/10) |
+| Roadmap section | Question | Issue | Status |
+| --- | --- | --- | --- |
+| `## Open Roadmap Questions` §1 | Leaderboard tie-break rule | [#9](https://github.com/michaemem/bet-cup/issues/9) | closed — total points, then most exact-score predictions, then alphabetical |
+| `## Open Roadmap Questions` §2 | Soft-delete vs. cascade-delete on participant removal (FR-004) | [#10](https://github.com/michaemem/bet-cup/issues/10) | closed — cascade-delete |
 
 ### Labels in use
 

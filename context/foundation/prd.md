@@ -80,7 +80,8 @@ Existing tournament-prediction apps (Kicktipp, Superbru, sweepstakes spreadsheet
 - FR-001: Admin can create a participant account by entering name, login (email or username), and an initial password. Priority: must-have
 - FR-002: Participant can log in with their login and password. Priority: must-have
 - FR-003: Participant can change their own password after logging in. Priority: must-have
-- FR-004: Admin can delete a participant account; that participant's predictions and earned points are removed from the leaderboard. Priority: must-have
+- FR-004: Admin can delete a participant account; that participant's predictions and earned points are removed from the leaderboard. Deletion is a cascade-delete (hard delete of the participant row plus their predictions and earned points); no soft-delete / audit trail is retained in the MVP. Priority: must-have
+  > Decision (2026-05-28, roadmap Q-02 / #10): cascade-delete chosen over soft-delete — the PRD wording reads as a hard delete, the MVP is single-tournament so an audit trail has no consumer, and a forgotten "inactive" filter in a future query would be a silent leaderboard bug.
 - FR-005: Unauthenticated visitor is redirected to the login page from any other route. Priority: must-have
 
 ### Tournament & Match Management
@@ -110,7 +111,8 @@ Existing tournament-prediction apps (Kicktipp, Superbru, sweepstakes spreadsheet
 
 - FR-018: System computes points for a (prediction, result) pair using: 3 pts if the prediction matches the exact score; else 2 pts if the prediction has the correct goal difference and matches the actual outcome (winner/draw); else 1 pt if the prediction matches only the actual outcome; else 0 pts. Priority: must-have
 - FR-019: A participant who did not submit a prediction for a match earns 0 points for that match. Priority: must-have
-- FR-020: Participant can view the leaderboard showing all participants ranked by total points across all played matches. Priority: must-have
+- FR-020: Participant can view the leaderboard showing all participants ranked by total points across all played matches. Ties are broken by exact-score-prediction count (more 3-point predictions ranks higher); if a tie still remains, participants are ordered alphabetically by name (case-insensitive, ascending). Priority: must-have
+  > Decision (2026-05-28, roadmap Q-01 / #9): primary tie-break is the count of exact-score (3-point) predictions, with alphabetical-by-name as the final deterministic fallback. Chosen over a plain alphabetical default because it rewards prediction precision while staying cheap and deterministic.
 - FR-021: Participant can view their own match-by-match history: each of their predictions, the actual result (when entered), and points earned. Priority: must-have
 
 > Socratic: targeted challenge run on FR-007, FR-013, FR-015, FR-017 (the FRs flagged as most likely to be contested). See blockquotes under each. The remaining FRs (FR-001..FR-006, FR-008..FR-012, FR-014, FR-016, FR-018..FR-021) were not individually challenged; if any becomes contested during `/10x-frame` or `/10x-plan`, run a per-FR Socratic round at that point.
