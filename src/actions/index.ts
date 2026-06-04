@@ -294,11 +294,12 @@ export const server = {
 
         // App-layer pre-check: a friendlier/earlier message than the silent
         // RLS zero-row result below (which remains the race-proof guard).
-        const { data: match } = await supabase
+        const { data: match, error: matchError } = await supabase
           .from("matches")
           .select("kickoff_time")
           .eq("id", input.matchId)
           .maybeSingle();
+        if (matchError) throw internalError(matchError);
         if (!match) {
           throw new ActionError({ code: "NOT_FOUND", message: "Match not found." });
         }

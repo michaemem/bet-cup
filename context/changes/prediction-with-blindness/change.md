@@ -1,7 +1,7 @@
 ---
 change_id: prediction-with-blindness
 title: Participant submits and edits predictions before kickoff (with blindness invariant)
-status: implemented
+status: impl_reviewed
 created: 2026-06-04
 updated: 2026-06-04
 archived_at: null
