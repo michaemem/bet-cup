@@ -32,7 +32,7 @@ BetCup is a private prediction pool for one friend group running one football to
 | F-01 | identity-boundary | (foundation) every route is gated; only admin can mint participants; data model has a clean role split | — | FR-005, FR-017, Access Control, Non-Goals (self-registration) | done |
 | S-01 | admin-creates-participants | admin creates a named participant with an initial password and that participant logs in successfully | F-01 | FR-001, FR-002 | done |
 | S-02 | tournament-and-matches | admin creates the tournament and populates its match list (one-by-one or via bulk paste), and edits matches before kickoff | F-01 | FR-006, FR-007, FR-008, FR-022 | done |
-| S-03 | prediction-with-blindness | participant submits and edits a prediction before kickoff; only the predictor can see it; after kickoff editing is blocked | F-01, S-02 | US-01, FR-011, FR-012, FR-013, FR-014, FR-015, FR-017 | proposed |
+| S-03 | prediction-with-blindness | participant submits and edits a prediction before kickoff; only the predictor can see it; after kickoff editing is blocked | F-01, S-02 | US-01, FR-011, FR-012, FR-013, FR-014, FR-015, FR-017 | done |
 | S-04 | results-scoring-leaderboard | admin enters/corrects a result, per-prediction points compute correctly, post-kickoff predictions become visible, the leaderboard ranks all participants | F-01, S-02, S-03 | US-02, FR-009, FR-010, FR-016, FR-018, FR-019, FR-020 | proposed |
 | S-05 | participant-match-history | participant reviews their own match-by-match history showing prediction, result, and points earned | S-04 | FR-021 | proposed |
 | S-06 | delete-participant | admin removes a participant; their predictions and earned points disappear from history and the leaderboard | S-01, S-04 | FR-004 | proposed |
@@ -117,7 +117,7 @@ What's already in place in the codebase as of 2026-05-28 (auto-researched + user
   - RLS policy shape for `predictions`: `SELECT WHERE (predictor_id = auth.uid()) OR (kickoff_time < now())`. Confirm `now()` evaluates per-row at fetch time and there's no caching path that could leak a prediction for a few seconds across the kickoff boundary. Owner: `/10x-plan`. Block: no.
   - Time source for the kickoff lock — server-side only (Postgres `now()` and Astro server clock), or also a client-side guard for snappier UX with the server as source-of-truth? Owner: `/10x-plan`. Block: no.
 - **Risk:** this is the integrity-load-bearing slice. The PRD's `## Success Criteria` says "violating it once nullifies the product" — so the cost of a single FR-015 leak is unrecoverable for this tournament. Mitigation lives in the RLS shape (DB-enforced, not just UI-enforced) plus an integration test that asserts a non-predictor's row-fetch returns zero rows for an unkicked match.
-- **Status:** proposed
+- **Status:** done
 
 ### S-04: Admin enters a result, scoring computes, leaderboard updates  (north star)
 
@@ -206,6 +206,7 @@ _All roadmap questions resolved. Decisions recorded inline below and reflected i
 - **F-01: (foundation) every non-public route redirects unauthenticated visitors to `/auth/signin`; the data model has a `profiles`+`role` split distinguishing admin from participant; the single admin is seeded; the existing self-registration endpoint and UI are removed; subsequent slices have a reliable migration + type-generation contract to build on.** — Archived 2026-06-03 → `context/archive/2026-05-28-identity-boundary/`. Lesson: —.
 - **S-02: admin creates the (single) tournament with a name, populates its match list either by entering matches one-by-one (home, away, kickoff) or by pasting a multi-line list in a fixed format with parsed-preview-then-confirm, and edits any match's teams or kickoff before that match's kickoff.** — Archived 2026-06-03 → `context/archive/2026-06-01-tournament-and-matches/`. Lesson: —.
 - **S-01: admin creates a named participant by entering name, login, and an initial password; the participant logs in successfully on the next attempt with those credentials.** — Archived 2026-06-04 → `context/archive/2026-06-03-admin-creates-participants/`. Lesson: —.
+- **S-03: logged-in participant views the full match list with kickoff times; for any match whose kickoff is in the future, they enter and confirm a (home, away) prediction; they can return and edit that prediction any time before kickoff; only they can see their prediction before kickoff (no other participant, not the admin); after kickoff the UI clearly indicates the match is locked. The admin (also a participant per FR-017) is subject to the same lock and the same blindness rule.** — Archived 2026-06-04 → `context/archive/2026-06-04-prediction-with-blindness/`. Lesson: —.
 
 ## GitHub issues
 
