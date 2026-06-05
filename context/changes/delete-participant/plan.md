@@ -283,10 +283,10 @@ None. No schema, RLS, or view changes — the cascade FKs and live views from F-
 
 #### Automated
 
-- [x] 3.1 Default gate green without a DB: `npm test` (live lane self-skips, guard runs)
-- [x] 3.2 Lint passes: `npm run lint`
-- [x] 3.3 Live lane passes with a local stack: `… npm test -- participants`
+- [x] 3.1 Default gate green without a DB: `npm test` (live lane self-skips, guard runs) — c119baa
+- [x] 3.2 Lint passes: `npm run lint` — c119baa
+- [x] 3.3 Live lane passes with a local stack: `… npm test -- participants` — c119baa
 
 #### Manual
 
-- [x] 3.4 Live lane against local Supabase shows cascade + FORBIDDEN + idempotency passing
+- [x] 3.4 Live lane against local Supabase shows cascade + FORBIDDEN + idempotency passing — c119baa
