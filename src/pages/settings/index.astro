@@ -1,0 +1,38 @@
+---
+import { ChangePasswordForm } from "@/components/account/ChangePasswordForm";
+import { DisplayNameForm } from "@/components/account/DisplayNameForm";
+import Layout from "@/layouts/Layout.astro";
+
+// Authenticated account settings (FR-003 + FR-023). Auto-protected by the
+// default-deny middleware — no admin role required, both roles land here.
+// `profile` is guaranteed for an authed user, but fall back defensively.
+const currentDisplayName = Astro.locals.profile?.displayName ?? "";
+---
+
+<Layout title="Settings">
+  <main class="mx-auto max-w-3xl space-y-8 p-6">
+    <header>
+      <h1 class="text-2xl font-bold">Settings</h1>
+      <p class="text-muted-foreground text-sm">Manage your display name and password.</p>
+      <a href="/dashboard" class="mt-2 inline-block text-sm underline">Back to dashboard</a>
+    </header>
+
+    <section class="space-y-4">
+      <div>
+        <h2 class="text-lg font-semibold">Display name</h2>
+        <p class="text-muted-foreground text-sm">
+          The name shown across the pool. Confirm your current password to change it.
+        </p>
+      </div>
+      <DisplayNameForm currentDisplayName={currentDisplayName} client:load />
+    </section>
+
+    <section class="space-y-4">
+      <div>
+        <h2 class="text-lg font-semibold">Password</h2>
+        <p class="text-muted-foreground text-sm">Changing your password signs out your other devices.</p>
+      </div>
+      <ChangePasswordForm client:load />
+    </section>
+  </main>
+</Layout>

@@ -33,6 +33,12 @@ const { user, profile } = Astro.locals;
         >
           My history
         </a>
+        <a
+          href="/settings"
+          class="inline-block rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm transition-colors hover:bg-white/20"
+        >
+          Settings
+        </a>
       </div>
       {
         profile?.roles.includes("admin") && (

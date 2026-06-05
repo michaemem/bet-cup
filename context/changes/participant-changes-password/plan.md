@@ -272,30 +272,30 @@ None. No schema or RLS changes; existing `profiles_update` policy and `auth.user
 
 #### Automated
 
-- [x] 1.1 Type checking passes: `npm run lint`
-- [x] 1.2 Schema unit tests pass: `npx vitest run src/lib/schemas/account.test.ts`
-- [x] 1.3 Action integration tests pass: `npx vitest run src/actions/account.test.ts`
-- [x] 1.4 Production build succeeds: `npm run build`
+- [x] 1.1 Type checking passes: `npm run lint` — a25e1e1
+- [x] 1.2 Schema unit tests pass: `npx vitest run src/lib/schemas/account.test.ts` — a25e1e1
+- [x] 1.3 Action integration tests pass: `npx vitest run src/actions/account.test.ts` — a25e1e1
+- [x] 1.4 Production build succeeds: `npm run build` — a25e1e1
 
 #### Manual
 
-- [x] 1.5 Wrong current password returns a field error and does not change the password
-- [ ] 1.6 After password change, old password fails and another device's session is invalidated
-- [x] 1.7 Display-name update changes only `display_name` (not `username`/`legal_name`)
+- [x] 1.5 Wrong current password returns a field error and does not change the password — a25e1e1
+- [x] 1.6 After password change, old password fails and another device's session is invalidated — a25e1e1
+- [x] 1.7 Display-name update changes only `display_name` (not `username`/`legal_name`) — a25e1e1
 
 ### Phase 2: Settings UI
 
 #### Automated
 
-- [ ] 2.1 Lint/type check passes: `npm run lint`
-- [ ] 2.2 Production build succeeds: `npm run build`
+- [x] 2.1 Lint/type check passes: `npm run lint`
+- [x] 2.2 Production build succeeds: `npm run build`
 
 #### Manual
 
-- [ ] 2.3 `/settings` loads for participant and admin; unauth redirects to `/auth/signin`
-- [ ] 2.4 Display-name change propagates to dashboard, leaderboard, history title after reload
-- [ ] 2.5 Wrong current password shows inline error in both forms
-- [ ] 2.6 Password form: mismatch and same-as-current show inline errors; valid change signs out other session, keeps current
+- [x] 2.3 `/settings` loads for participant and admin; unauth redirects to `/auth/signin`
+- [x] 2.4 Display-name change propagates to dashboard, leaderboard, history title after reload
+- [x] 2.5 Wrong current password shows inline error in both forms
+- [x] 2.6 Password form: mismatch and same-as-current show inline errors; valid change signs out other session, keeps current
 - [ ] 2.7 Layout consistent with other participant pages on desktop + mobile
 
 ### Phase 3: PRD + roadmap documentation
