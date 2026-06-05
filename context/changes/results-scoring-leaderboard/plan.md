@@ -327,8 +327,8 @@ Single forward-only migration; no data backfill (no prior results exist). `match
 #### Manual
 
 - [x] 2.5 Participant call to `actions.results.upsert` rejected `UNAUTHORIZED` before any DB call — 364683d
-- [ ] 2.6 Upsert on a future-kickoff match returns the friendly "not kicked off" error
-- [x] 2.7 Re-upsert updates the single `match_results` row
+- [x] 2.6 Upsert on a future-kickoff match returns the friendly "not kicked off" error — 43735c9
+- [x] 2.7 Re-upsert updates the single `match_results` row — 43735c9
 
 ### Phase 3: Admin result-entry UI
 
@@ -340,21 +340,21 @@ Single forward-only migration; no data backfill (no prior results exist). `match
 
 #### Manual
 
-- [x] 3.4 Past match on `/admin` shows a score form; entry persists across reload
-- [x] 3.5 Saved result is editable; future-kickoff match shows no result form
-- [x] 3.6 Non-admin is redirected away from `/admin`
+- [x] 3.4 Past match on `/admin` shows a score form; entry persists across reload — 43735c9
+- [x] 3.5 Saved result is editable; future-kickoff match shows no result form — 43735c9
+- [x] 3.6 Non-admin is redirected away from `/admin` — 43735c9
 
 ### Phase 4: Leaderboard page
 
 #### Automated
 
-- [x] 4.1 Type checking passes: `npm run lint`
-- [x] 4.2 Linting passes: `npm run lint`
-- [x] 4.3 Production build passes: `npm run build`
+- [x] 4.1 Type checking passes: `npm run lint` — 43735c9
+- [x] 4.2 Linting passes: `npm run lint` — 43735c9
+- [x] 4.3 Production build passes: `npm run build` — 43735c9
 
 #### Manual
 
-- [x] 4.4 `/leaderboard` lists every participant (incl. admin); non-predictor shows 0
-- [x] 4.5 Totals/order update after a result entry and after a correction
-- [ ] 4.6 Tie broken by exact-score count, then alphabetically
-- [x] 4.7 Post-kickoff predictions visible to all; pre-kickoff still hidden
+- [x] 4.4 `/leaderboard` lists every participant (incl. admin); non-predictor shows 0 — 43735c9
+- [x] 4.5 Totals/order update after a result entry and after a correction — 43735c9
+- [x] 4.6 Tie broken by exact-score count, then alphabetically — 43735c9
+- [x] 4.7 Post-kickoff predictions visible to all; pre-kickoff still hidden — 43735c9
