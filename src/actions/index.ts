@@ -220,10 +220,10 @@ export const server = {
      *      delete) — this is load-bearing: a SOFT delete keeps the `auth.users`
      *      row, so the `ON DELETE CASCADE` to profiles/predictions would NOT
      *      fire and the participant would linger on the leaderboard. NEVER pass
-     *      `shouldSoftDelete: true`. Idempotency is already handled upstream by
-     *      step 2, so any `deleteUser` error here is an unexpected fault →
-     *      `internalError` (the rare delete-between-read-and-delete race still
-     *      leaves the data consistent). The DB cascade removes profile/roles/
+     *      `shouldSoftDelete: true`. Idempotency is handled upstream by step 2
+     *      AND here: a not-found error (the rare delete-between-read-and-delete
+     *      race) is also treated as success; any other `deleteUser` error is an
+     *      unexpected fault → `internalError`. The DB cascade removes profile/roles/
      *      predictions; the live leaderboard/history views drop the participant
      *      on the next read.
      */
@@ -251,7 +251,13 @@ export const server = {
         }
 
         const { error } = await admin.auth.admin.deleteUser(input.id);
-        if (error) throw internalError(error);
+        // A not-found here means the row vanished between the role read and this
+        // delete (a concurrent double-delete): the caller's desired end state —
+        // user gone — is already true, so treat it as idempotent success rather
+        // than a confusing 500. Any other error is an unexpected fault.
+        if (error && error.code !== "user_not_found" && error.status !== 404) {
+          throw internalError(error);
+        }
 
         return { ok: true };
       },
