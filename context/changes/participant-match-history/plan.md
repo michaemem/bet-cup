@@ -80,7 +80,7 @@ Document the cross-participant viewing capability and the refined listing rule b
 
 **Intent**: Reflect the extended scope and the refined listing rule in the slice's index row and detail section.
 
-**Contract**: In the "At a glance" table (`:41`), extend the S-05 PRD refs to `FR-021, FR-021b` and broaden the outcome text to include viewing other participants' revealed history. In the `### S-05` section (`:140-150`), update **Outcome** to: (a) own history shows prediction/result/points with future-unpredicted matches omitted, and (b) any other participant's history is viewable for kicked-off matches only (blindness preserved). Add `FR-021b` to the section's **PRD refs**. Mirror the PRD-ref change in the Backlog Handoff row (`:186`) if present.
+**Contract** (target headings, not line numbers — the roadmap shifts): In the **"At a glance"** table, S-05 row, extend the PRD refs to `FR-021, FR-021b` and broaden the outcome text to include viewing other participants' revealed history. In the **`### S-05`** section, update **Outcome** to: (a) own history shows prediction/result/points with future-unpredicted matches omitted, and (b) any other participant's history is viewable for kicked-off matches only (blindness preserved). Add `FR-021b` to the section's **PRD refs**. Mirror the PRD-ref change in the **Backlog Handoff** table's S-05 row if present.
 
 ### Success Criteria:
 
@@ -109,7 +109,7 @@ A shared pure row-builder plus the own-history SSR page reading the caller's dat
 
 **Intent**: Centralize the merge of matches + predictions + results + points into display rows so both history pages share one tested code path; keep the merge logic pure (DB-free) for unit testing.
 
-**Contract**: Export `HistoryRow` = `{ matchId: string; homeTeam: string; awayTeam: string; kickoffLocal: string; isPast: boolean; prediction: { homeGoals: number; awayGoals: number } | null; result: { homeScore: number; awayScore } | null; points: number | null }` and a `HistorySummary` = `{ rows: HistoryRow[]; totalPoints: number }`. Export a pure `buildHistoryRows(input)` that takes `{ matches, predictions, results, scores, zone }` (plain arrays/maps keyed by `match_id`, plus the IANA `zone`) and returns `HistorySummary`: include a match iff a prediction exists for the viewed participant **or** a result exists; map `points` from the `scores` (`prediction_scores`) input when present, else `0` when a result exists but no prediction, else `null`; compute `totalPoints` as the sum of non-null points; order by `kickoff_time` ascending; format `kickoffLocal` via `formatInZone`. Export an async `loadHistory(supabase, targetUserId, zone)` that runs the four session-client queries (`matches`; `predictions` filtered `.eq("predictor_id", targetUserId)`; `match_results`; `prediction_scores` filtered `.eq("predictor_id", targetUserId)`) and returns `buildHistoryRows(...)`. Points are never computed here — only read from `prediction_scores`.
+**Contract**: Export `HistoryRow` = `{ matchId: string; homeTeam: string; awayTeam: string; kickoffLocal: string; isPast: boolean; prediction: { homeGoals: number; awayGoals: number } | null; result: { homeScore: number; awayScore } | null; points: number | null }` and a `HistorySummary` = `{ rows: HistoryRow[]; totalPoints: number }`. Export a pure `buildHistoryRows(input)` that takes `{ matches, predictions, results, scores, zone }` (plain arrays/maps keyed by `match_id`, plus the IANA `zone`) and returns `HistorySummary`: include a match iff a prediction exists for the viewed participant **or** a result exists; map `points` from the `scores` (`prediction_scores`) input when present, else `0` when a result exists but no prediction, else `null`; compute `totalPoints` as the sum of non-null points; order by `kickoff_time` ascending; format `kickoffLocal` via `formatInZone`. Export an async `loadHistory(supabase, targetUserId, zone)` that runs the four session-client queries (`matches`; `predictions` filtered `.eq("predictor_id", targetUserId)`; `match_results`; `prediction_scores` filtered `.eq("predictor_id", targetUserId)`) and returns `buildHistoryRows(...)`. **Error behavior**: check each query's `{ error }` and `throw` on the first non-null error (e.g. `throw new Error("history: failed to load <relation>")`), so the per-read error channel from `predictions/index.astro` is preserved through a single entry point; callers wrap the call in try/catch and map a throw to a 500. Points are never computed here — only read from `prediction_scores`.
 
 #### 2. Own history page
 
@@ -117,7 +117,7 @@ A shared pure row-builder plus the own-history SSR page reading the caller's dat
 
 **Intent**: Render the caller's own history table with a running total.
 
-**Contract**: SSR with `createClient(Astro.request.headers, Astro.cookies)` and `Astro.locals.user?.id`. Load the single tournament's `time_zone` (pattern from `src/pages/predictions/index.astro:18-22`); call `loadHistory(supabase, userId, zone)`; on any query error `return new Response("Failed to load history", { status: 500 })`. Render a raw `<table>` (match, kickoff, your prediction, result, points) inside the `Layout` + `main.mx-auto.max-w-3xl.space-y-6.p-6` shell with a "Back to dashboard" link; show predictions as `H–A`, result as `H–A` or `—`, points or `—`; render a running-total row/footer. Empty state when no rows: "No history yet — your predictions and results will appear here." Use `tabular-nums`/`text-muted-foreground` per leaderboard precedent.
+**Contract**: SSR with `createClient(Astro.request.headers, Astro.cookies)` and `Astro.locals.user?.id`. Load the single tournament's `time_zone` (pattern from `src/pages/predictions/index.astro:18-22`); call `loadHistory(supabase, userId, zone)` inside a try/catch; on a thrown query error log it and `return new Response("Failed to load history", { status: 500 })`. Render a raw `<table>` (match, kickoff, your prediction, result, points) inside the `Layout` + `main.mx-auto.max-w-3xl.space-y-6.p-6` shell with a "Back to dashboard" link; show predictions as `H–A`, result as `H–A` or `—`, points or `—`; render a running-total row/footer. Empty state when no rows: "No history yet — your predictions and results will appear here." Use `tabular-nums`/`text-muted-foreground` per leaderboard precedent.
 
 #### 3. Dashboard link
 
@@ -158,7 +158,7 @@ A nested dynamic route reusing `loadHistory`, plus leaderboard name links as the
 
 **Intent**: Show any participant's revealed history, relying on RLS for the blindness boundary.
 
-**Contract**: SSR; read `participantId` from `Astro.params`. If it equals the caller's own id, redirect to `/history` (canonical own view). Look up the target's `display_name` from `profiles_public` (`.eq("id", participantId).maybeSingle()`); if absent, return a 404 (`Astro.redirect`/`new Response(..., { status: 404 })`) or render a friendly "Participant not found." Call `loadHistory(supabase, participantId, zone)` — RLS ensures only the target's kicked-off predictions return, so the listing rule yields revealed matches only. Render the **same table** as Phase 2 with a header "{display_name}'s history" and a "Back to leaderboard" link. Empty state: "No revealed history yet." (when the participant has no kicked-off predictions and no results to show).
+**Contract**: SSR; read `participantId` from `Astro.params`. If it equals the caller's own id, redirect to `/history` (canonical own view). Look up the target's `display_name` from `profiles_public` (`.eq("id", participantId).maybeSingle()`); treat **no usable row** — whether `data` is null OR `error` is non-null (a non-UUID path like `/history/abc` raises Postgres `22P02 invalid input syntax for type uuid`, which surfaces as `error`, not `data: null`) — as not-found: render a friendly "Participant not found." (or `new Response(..., { status: 404 })`). (A cheap `if (!/^[0-9a-f-]{36}$/i.test(participantId))` short-circuit before the query is an acceptable equivalent.) Call `loadHistory(supabase, participantId, zone)` inside a try/catch (on a thrown query error log it and `return new Response("Failed to load history", { status: 500 })`) — RLS ensures only the target's kicked-off predictions return, so the listing rule yields revealed matches only. Render the **same table** as Phase 2 with a header "{display_name}'s history" and a "Back to leaderboard" link. Empty state: "No revealed history yet." (when the participant has no kicked-off predictions and no results to show).
 
 #### 2. Link leaderboard names to history
 
@@ -181,7 +181,7 @@ A nested dynamic route reusing `loadHistory`, plus leaderboard name links as the
 - Clicking a name on `/leaderboard` opens that participant's history.
 - Another participant's page lists only kicked-off matches; it never shows a pre-kickoff prediction (verify with a match that has not kicked off).
 - A kicked-off-but-unresulted match shows the other participant's revealed prediction with no result/points.
-- Visiting `/history/<own-id>` redirects to `/history`; an unknown/invalid id shows the not-found state.
+- Visiting `/history/<own-id>` redirects to `/history`; an unknown id (valid-UUID-but-no-such-participant) AND a malformed non-UUID id (e.g. `/history/abc`) both show the not-found state.
 
 ---
 
@@ -207,7 +207,7 @@ Pin the integrity invariants and the row-builder rules.
 
 **Intent**: Prove the history reads cannot leak a pre-kickoff prediction and that a participant's history total equals their leaderboard total.
 
-**Contract**: Seed ≥2 participants, a future match and a kicked-off match (one with a result), and predictions. As participant A's session client: selecting `predictions`/`prediction_scores` filtered to participant B returns **zero rows for the future match** and the revealed row(s) for the kicked-off match. Assert `sum(prediction_scores.points where predictor_id = B)` equals `leaderboard.total_points` for B. (This complements, not duplicates, the existing predictions-blindness test by asserting the history read path specifically.)
+**Contract**: Seed ≥2 participants, a future match and a kicked-off match (one with a result), and predictions. The **centerpiece** assertion is consistency (the roadmap's named top risk for S-05): as participant A's session client, `sum(prediction_scores.points where predictor_id = B)` equals `leaderboard.total_points` for B. Keep the blindness portion **thin** — a single history-read-path smoke assertion that `prediction_scores` filtered to B returns **zero rows for the future match** — rather than re-proving the `predictions` SELECT policy (already exhaustively covered by `predictions.rls.test.ts`). This complements, not duplicates, the existing blindness test.
 
 #### 3. CI coverage
 
@@ -279,12 +279,12 @@ None — no schema change. Pure read feature over S-04's objects.
 
 #### Automated
 
-- [ ] 1.1 Lint passes (docs-only guard): `npm run lint`
+- [x] 1.1 Lint passes (docs-only guard): `npm run lint`
 
 #### Manual
 
-- [ ] 1.2 `prd.md` contains FR-021b; FR-021 unchanged
-- [ ] 1.3 `roadmap.md` S-05 row and section mention FR-021b and the refined listing rule
+- [x] 1.2 `prd.md` contains FR-021b; FR-021 unchanged
+- [x] 1.3 `roadmap.md` S-05 row and section mention FR-021b and the refined listing rule
 
 ### Phase 2: Own history page (`/history`)
 
@@ -314,7 +314,7 @@ None — no schema change. Pure read feature over S-04's objects.
 - [ ] 3.4 Clicking a leaderboard name opens that participant's history
 - [ ] 3.5 Other participant's page lists kicked-off matches only; no pre-kickoff prediction shown
 - [ ] 3.6 Kicked-off-but-unresulted match shows the other's revealed prediction, no result/points
-- [ ] 3.7 `/history/<own-id>` redirects to `/history`; invalid id shows not-found state
+- [ ] 3.7 `/history/<own-id>` redirects to `/history`; unknown UUID and malformed non-UUID id both show not-found state
 
 ### Phase 4: Tests (blindness + consistency + row logic)
 
