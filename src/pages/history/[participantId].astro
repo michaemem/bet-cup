@@ -1,0 +1,139 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { loadHistory, type HistorySummary } from "@/lib/history";
+import { createClient } from "@/lib/supabase";
+
+// Cross-participant revealed history (FR-021b). Reads the TARGET's history under
+// the caller's RLS: predictions_select returns another participant's picks only
+// post-kickoff, so the listing rule naturally yields revealed matches only. The
+// blindness boundary is the DB's job — the eq() filter in loadHistory is a
+// friendly mirror, never the guard. No service-role client here.
+const supabase = createClient(Astro.request.headers, Astro.cookies);
+const userId = Astro.locals.user?.id ?? null;
+const participantId = Astro.params.participantId ?? "";
+
+// Self → the canonical own view.
+if (userId && participantId === userId) {
+  return Astro.redirect("/history");
+}
+
+// profiles_public.id is a uuid column; a non-UUID path (e.g. /history/abc) would
+// make Postgres raise 22P02, so short-circuit the obvious malformed case up front.
+// After that guard, a missing row → not-found (404); a genuine lookup error → 500.
+const UUID_RE = /^[0-9a-f-]{36}$/i;
+
+let notFound = false;
+let displayName = "";
+let summary: HistorySummary = { rows: [], totalPoints: 0 };
+
+if (supabase && userId) {
+  if (!UUID_RE.test(participantId)) {
+    notFound = true;
+  } else {
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles_public")
+      .select("id, display_name")
+      .eq("id", participantId)
+      .maybeSingle();
+
+    if (profileError) {
+      console.error("history: failed to load profile", profileError);
+      return new Response("Failed to load profile", { status: 500 });
+    }
+
+    if (!profile) {
+      notFound = true;
+    } else {
+      displayName = profile.display_name ?? "—";
+
+      const { data: tournament, error: tournamentError } = await supabase
+        .from("tournaments")
+        .select("time_zone")
+        .limit(1)
+        .maybeSingle();
+      if (tournamentError) {
+        console.error("history: failed to load tournament", tournamentError);
+        return new Response("Failed to load tournament", { status: 500 });
+      }
+
+      if (tournament) {
+        try {
+          summary = await loadHistory(supabase, participantId, tournament.time_zone);
+        } catch (error) {
+          console.error("history: failed to load history", error);
+          return new Response("Failed to load history", { status: 500 });
+        }
+      }
+    }
+  }
+}
+
+if (notFound) {
+  Astro.response.status = 404;
+}
+
+const { rows, totalPoints } = summary;
+const fmtScore = (pair: { homeGoals: number; awayGoals: number } | { homeScore: number; awayScore: number } | null) => {
+  if (!pair) return "—";
+  return "homeGoals" in pair ? `${pair.homeGoals}–${pair.awayGoals}` : `${pair.homeScore}–${pair.awayScore}`;
+};
+---
+
+<Layout title={notFound ? "History" : `${displayName}'s history`}>
+  <main class="mx-auto max-w-3xl space-y-6 p-6">
+    <header>
+      <h1 class="text-2xl font-bold">{notFound ? "History" : `${displayName}'s history`}</h1>
+      {
+        !notFound && (
+          <p class="text-muted-foreground text-sm">
+            Revealed predictions, results, and points for matches that have kicked off.
+          </p>
+        )
+      }
+      <a href="/leaderboard" class="mt-2 inline-block text-sm underline">Back to leaderboard</a>
+    </header>
+
+    {
+      notFound ? (
+        <p class="text-muted-foreground text-sm">Participant not found.</p>
+      ) : rows.length === 0 ? (
+        <p class="text-muted-foreground text-sm">No revealed history yet.</p>
+      ) : (
+        <section class="space-y-4">
+          <table class="w-full text-left text-sm">
+            <thead>
+              <tr class="border-b">
+                <th class="py-2 font-medium">Match</th>
+                <th class="py-2 font-medium">Kickoff</th>
+                <th class="py-2 text-right font-medium">Prediction</th>
+                <th class="py-2 text-right font-medium">Result</th>
+                <th class="py-2 text-right font-medium">Points</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr class="border-b">
+                  <td class="py-2">
+                    {row.homeTeam} vs {row.awayTeam}
+                  </td>
+                  <td class="text-muted-foreground py-2 tabular-nums">{row.kickoffLocal}</td>
+                  <td class="py-2 text-right tabular-nums">{fmtScore(row.prediction)}</td>
+                  <td class="py-2 text-right tabular-nums">{fmtScore(row.result)}</td>
+                  <td class="py-2 text-right font-medium tabular-nums">{row.points ?? "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td class="py-2 font-medium" colspan="4">
+                  Total
+                </td>
+                <td class="py-2 text-right font-medium tabular-nums">{totalPoints}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </section>
+      )
+    }
+  </main>
+</Layout>

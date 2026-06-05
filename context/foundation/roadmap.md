@@ -34,7 +34,7 @@ BetCup is a private prediction pool for one friend group running one football to
 | S-02 | tournament-and-matches | admin creates the tournament and populates its match list (one-by-one or via bulk paste), and edits matches before kickoff | F-01 | FR-006, FR-007, FR-008, FR-022 | done |
 | S-03 | prediction-with-blindness | participant submits and edits a prediction before kickoff; only the predictor can see it; after kickoff editing is blocked | F-01, S-02 | US-01, FR-011, FR-012, FR-013, FR-014, FR-015, FR-017 | done |
 | S-04 | results-scoring-leaderboard | admin enters/corrects a result, per-prediction points compute correctly, post-kickoff predictions become visible, the leaderboard ranks all participants | F-01, S-02, S-03 | US-02, FR-009, FR-010, FR-016, FR-018, FR-019, FR-020 | done |
-| S-05 | participant-match-history | participant reviews their own match-by-match history showing prediction, result, and points earned | S-04 | FR-021 | proposed |
+| S-05 | participant-match-history | participant reviews their own match-by-match history (prediction, result, points) and views any other participant's revealed (post-kickoff) history from the leaderboard | S-04 | FR-021, FR-021b | done |
 | S-06 | delete-participant | admin removes a participant; their predictions and earned points disappear from history and the leaderboard | S-01, S-04 | FR-004 | proposed |
 | S-07 | participant-changes-password | participant changes their own password from a settings page after first login | F-01 | FR-003 | proposed |
 
@@ -135,15 +135,15 @@ What's already in place in the codebase as of 2026-05-28 (auto-researched + user
 
 ### S-05: Participant match-by-match history
 
-- **Outcome:** participant opens a "my history" view and sees, for every match where a result has been entered, their own prediction, the actual result, and the points they earned; matches without a result yet are listed but show no points. Their running point total matches the leaderboard total for them.
+- **Outcome:** (a) participant opens a "my history" view and sees their own prediction, the actual result (when entered), and the points earned for each match they predicted or that has a result; a match they predicted but that has no result yet is listed showing the prediction but no points; future matches they have not predicted are omitted. Their running point total matches the leaderboard total for them. (b) clicking any name on the leaderboard opens that participant's history, showing only kicked-off matches — their revealed predictions, results, and points — never their pre-kickoff picks (blindness preserved per FR-015). Listing rule (both views): a match appears when the viewed participant has a prediction for it or a result exists.
 - **Change ID:** `participant-match-history`
-- **PRD refs:** FR-021
+- **PRD refs:** FR-021, FR-021b
 - **Prerequisites:** S-04
 - **Parallel with:** S-06, S-07
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** small slice riding on `S-04`'s scoring contract; if the per-match number here doesn't match the leaderboard total, the user-visible inconsistency erodes trust in scoring more than a missing feature would.
-- **Status:** proposed
+- **Status:** done
 
 ### S-06: Admin deletes a participant
 
@@ -179,7 +179,7 @@ What's already in place in the codebase as of 2026-05-28 (auto-researched + user
 | S-02 | tournament-and-matches | Admin creates tournament and adds matches (one-by-one + bulk paste) | done | Landed — admin can create the tournament and populate matches |
 | S-03 | prediction-with-blindness | Participant submits and edits predictions before kickoff (with blindness invariant) | yes | Unblocked (F-01 + S-02 `done`) |
 | S-04 | results-scoring-leaderboard | Admin enters results; scoring computes; leaderboard updates (north star) | no | Unblocks once F-01 + S-02 + S-03 are `done` |
-| S-05 | participant-match-history | Participant views their match-by-match history | no | Unblocks once S-04 is `done` |
+| S-05 | participant-match-history | Participant views their own and others' revealed match-by-match history (FR-021, FR-021b) | no | Unblocks once S-04 is `done` |
 | S-06 | delete-participant | Admin deletes a participant; predictions and points are removed | no | Unblocks once S-01 + S-04 are `done` |
 | S-07 | participant-changes-password | Participant changes their own password | yes | Unblocked (F-01 `done`); deferred under `main_goal: speed` |
 
@@ -208,6 +208,7 @@ _All roadmap questions resolved. Decisions recorded inline below and reflected i
 - **S-01: admin creates a named participant by entering name, login, and an initial password; the participant logs in successfully on the next attempt with those credentials.** — Archived 2026-06-04 → `context/archive/2026-06-03-admin-creates-participants/`. Lesson: —.
 - **S-03: logged-in participant views the full match list with kickoff times; for any match whose kickoff is in the future, they enter and confirm a (home, away) prediction; they can return and edit that prediction any time before kickoff; only they can see their prediction before kickoff (no other participant, not the admin); after kickoff the UI clearly indicates the match is locked. The admin (also a participant per FR-017) is subject to the same lock and the same blindness rule.** — Archived 2026-06-04 → `context/archive/2026-06-04-prediction-with-blindness/`. Lesson: —.
 - **S-04: admin views a kickoff-passed match with no result entered, enters home/away scores and confirms; every participant's prediction for that match is scored per FR-018 (3 / 2 / 1 / 0); the post-kickoff predictions become visible to all participants (FR-016); the leaderboard ranks all participants by total points across all played matches and reflects the new totals immediately. If the admin re-enters the result, all affected per-prediction scores recompute and the leaderboard updates.** — Archived 2026-06-05 → `context/archive/2026-06-04-results-scoring-leaderboard/`. Lesson: —.
+- **S-05: (a) participant opens a "my history" view and sees their own prediction, the actual result (when entered), and the points earned for each match they predicted or that has a result; a match they predicted but that has no result yet is listed showing the prediction but no points; future matches they have not predicted are omitted. Their running point total matches the leaderboard total for them. (b) clicking any name on the leaderboard opens that participant's history, showing only kicked-off matches — their revealed predictions, results, and points — never their pre-kickoff picks (blindness preserved per FR-015). Listing rule (both views): a match appears when the viewed participant has a prediction for it or a result exists.** — Archived 2026-06-05 → `context/archive/2026-06-05-participant-match-history/`. Lesson: —.
 
 ## GitHub issues
 
@@ -222,7 +223,7 @@ Migrated to [`michaemem/bet-cup`](https://github.com/michaemem/bet-cup) GitHub I
 | S-02 | `tournament-and-matches` | [#3](https://github.com/michaemem/bet-cup/issues/3) | Admin creates tournament and adds matches (one-by-one + bulk paste) |
 | S-03 | `prediction-with-blindness` | [#4](https://github.com/michaemem/bet-cup/issues/4) | Participant submits and edits predictions before kickoff (with blindness invariant) |
 | S-04 | `results-scoring-leaderboard` | [#5](https://github.com/michaemem/bet-cup/issues/5) | Admin enters results; scoring computes; leaderboard updates (north star) |
-| S-05 | `participant-match-history` | [#6](https://github.com/michaemem/bet-cup/issues/6) | Participant views their match-by-match history |
+| S-05 | `participant-match-history` | [#6](https://github.com/michaemem/bet-cup/issues/6) | Participant views their own and any participant's revealed match-by-match history |
 | S-06 | `delete-participant` | [#7](https://github.com/michaemem/bet-cup/issues/7) | Admin deletes a participant; predictions and points are removed |
 | S-07 | `participant-changes-password` | [#8](https://github.com/michaemem/bet-cup/issues/8) | Participant changes their own password |
 

@@ -1,0 +1,99 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { loadHistory, type HistorySummary } from "@/lib/history";
+import { createClient } from "@/lib/supabase";
+
+// Participant surface (middleware default-deny gate — no admin role required).
+// Reads the caller's OWN history server-side under RLS via loadHistory. Points
+// come from the prediction_scores view, never recomputed here.
+const supabase = createClient(Astro.request.headers, Astro.cookies);
+const userId = Astro.locals.user?.id ?? null;
+
+let summary: HistorySummary = { rows: [], totalPoints: 0 };
+let hasTournament = false;
+
+if (supabase && userId) {
+  const { data: tournament, error: tournamentError } = await supabase
+    .from("tournaments")
+    .select("id, name, time_zone")
+    .limit(1)
+    .maybeSingle();
+  if (tournamentError) {
+    console.error("history: failed to load tournament", tournamentError);
+    return new Response("Failed to load tournament", { status: 500 });
+  }
+
+  if (tournament) {
+    hasTournament = true;
+    try {
+      summary = await loadHistory(supabase, userId, tournament.time_zone);
+    } catch (error) {
+      console.error("history: failed to load history", error);
+      return new Response("Failed to load history", { status: 500 });
+    }
+  }
+}
+
+const { rows, totalPoints } = summary;
+const fmtScore = (pair: { homeGoals: number; awayGoals: number } | { homeScore: number; awayScore: number } | null) => {
+  if (!pair) return "—";
+  return "homeGoals" in pair ? `${pair.homeGoals}–${pair.awayGoals}` : `${pair.homeScore}–${pair.awayScore}`;
+};
+---
+
+<Layout title="My history">
+  <main class="mx-auto max-w-3xl space-y-6 p-6">
+    <header>
+      <h1 class="text-2xl font-bold">My history</h1>
+      <p class="text-muted-foreground text-sm">
+        Your prediction, the actual result, and the points you earned for each match.
+      </p>
+      <a href="/dashboard" class="mt-2 inline-block text-sm underline">Back to dashboard</a>
+    </header>
+
+    {
+      rows.length === 0 ? (
+        <p class="text-muted-foreground text-sm">
+          {hasTournament
+            ? "No history yet — your predictions and results will appear here."
+            : "No tournament has been set up yet."}
+        </p>
+      ) : (
+        <section class="space-y-4">
+          <table class="w-full text-left text-sm">
+            <thead>
+              <tr class="border-b">
+                <th class="py-2 font-medium">Match</th>
+                <th class="py-2 font-medium">Kickoff</th>
+                <th class="py-2 text-right font-medium">Your prediction</th>
+                <th class="py-2 text-right font-medium">Result</th>
+                <th class="py-2 text-right font-medium">Points</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr class="border-b">
+                  <td class="py-2">
+                    {row.homeTeam} vs {row.awayTeam}
+                  </td>
+                  <td class="text-muted-foreground py-2 tabular-nums">{row.kickoffLocal}</td>
+                  <td class="py-2 text-right tabular-nums">{fmtScore(row.prediction)}</td>
+                  <td class="py-2 text-right tabular-nums">{fmtScore(row.result)}</td>
+                  <td class="py-2 text-right font-medium tabular-nums">{row.points ?? "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td class="py-2 font-medium" colspan="4">
+                  Total
+                </td>
+                <td class="py-2 text-right font-medium tabular-nums">{totalPoints}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </section>
+      )
+    }
+  </main>
+</Layout>

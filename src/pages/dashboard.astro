@@ -27,6 +27,12 @@ const { user, profile } = Astro.locals;
         >
           Leaderboard
         </a>
+        <a
+          href="/history"
+          class="inline-block rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm transition-colors hover:bg-white/20"
+        >
+          My history
+        </a>
       </div>
       {
         profile?.roles.includes("admin") && (
