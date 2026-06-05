@@ -1,4 +1,5 @@
 ---
+import { DeleteParticipantButton } from "@/components/admin/DeleteParticipantButton";
 import { ParticipantForm } from "@/components/admin/ParticipantForm";
 import Layout from "@/layouts/Layout.astro";
 import { createClient } from "@/lib/supabase";
@@ -9,6 +10,7 @@ import { createClient } from "@/lib/supabase";
 const supabase = createClient(Astro.request.headers, Astro.cookies);
 
 interface ParticipantRow {
+  id: string;
   displayName: string;
   username: string;
 }
@@ -24,7 +26,7 @@ if (supabase && currentUser) {
   // invariant means excluding self == excluding the admin.
   const { data, error } = await supabase
     .from("profiles")
-    .select("display_name, username")
+    .select("id, display_name, username")
     .neq("id", currentUser.id)
     .order("created_at", { ascending: true });
   // Surface a read failure instead of rendering an empty list as
@@ -33,7 +35,7 @@ if (supabase && currentUser) {
     console.error("admin: failed to load participants", error);
     return new Response("Failed to load participants", { status: 500 });
   }
-  participants = data.map((row) => ({ displayName: row.display_name, username: row.username }));
+  participants = data.map((row) => ({ id: row.id, displayName: row.display_name, username: row.username }));
 }
 ---
 
@@ -57,6 +59,9 @@ if (supabase && currentUser) {
               <tr class="border-b">
                 <th class="py-2 font-medium">Name</th>
                 <th class="py-2 font-medium">Username</th>
+                <th class="py-2 font-medium">
+                  <span class="sr-only">Actions</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -64,6 +69,9 @@ if (supabase && currentUser) {
                 <tr class="border-b">
                   <td class="py-2">{p.displayName}</td>
                   <td class="py-2 font-mono">{p.username}</td>
+                  <td class="py-2 text-right">
+                    <DeleteParticipantButton client:load id={p.id} displayName={p.displayName} />
+                  </td>
                 </tr>
               ))}
             </tbody>
