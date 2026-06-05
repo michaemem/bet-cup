@@ -1,7 +1,7 @@
 ---
 change_id: testing-scoring
 title: Test scoring & ranking correctness (test-plan Phase 1)
-status: implementing
+status: implemented
 created: 2026-06-04
 updated: 2026-06-05
 archived_at: null

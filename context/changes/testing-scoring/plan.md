@@ -237,11 +237,11 @@ None — no schema or data migrations. The only dependency change is a test-only
 
 #### Automated
 
-- [x] 2.1 Linting passes: `npm run lint`
-- [x] 2.2 Type/astro check passes: `npm run build`
-- [x] 2.3 Default test lane runs `result.test.ts` green (`npm test`)
-- [x] 2.4 File requires no DB / not gated by `dbConfigured`
+- [x] 2.1 Linting passes: `npm run lint` — 8fa55eb
+- [x] 2.2 Type/astro check passes: `npm run build` — 8fa55eb
+- [x] 2.3 Default test lane runs `result.test.ts` green (`npm test`) — 8fa55eb
+- [x] 2.4 File requires no DB / not gated by `dbConfigured` — 8fa55eb
 
 #### Manual
 
-- [x] 2.5 Review rejected/accepted cases match FR-009 intent
+- [x] 2.5 Review rejected/accepted cases match FR-009 intent — 8fa55eb
