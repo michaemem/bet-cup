@@ -5,12 +5,16 @@ import type { Database } from "@/db/database.types";
 /**
  * SERVICE-ROLE ISOLATION — the single load-bearing security constraint of S-01.
  *
- * This is the ONLY module that reads SUPABASE_SERVICE_ROLE_KEY, and it must have
- * exactly ONE importer: the `participants.create` Action. The service-role key
- * BYPASSES RLS entirely, so this client must NEVER be used to read per-user data
- * (predictions, profiles, roles, ...) — doing so is the single most likely path
- * to an FR-015 "blindness" leak (a participant seeing another's predictions).
- * Its one sanctioned use is `auth.admin.createUser`.
+ * This is the ONLY module that reads SUPABASE_SERVICE_ROLE_KEY. The service-role
+ * key BYPASSES RLS entirely, so this client must NEVER be used to READ per-user
+ * data (predictions, profiles, roles, ...) — doing so is the single most likely
+ * path to an FR-015 "blindness" leak (a participant seeing another's
+ * predictions). Its ONLY sanctioned uses are `auth.admin` WRITE operations that
+ * manage the auth user lifecycle — `createUser` (`participants.create`) and
+ * `deleteUser` (`participants.delete`) — both of which need the privileged
+ * client because no RLS path can create or delete an `auth.users` row. Every
+ * per-user READ (including the delete-target role check) stays on the
+ * RLS-respecting SSR client, so this client remains strictly write-only.
  *
  * Built from `@supabase/supabase-js` (NOT `@supabase/ssr`) with no cookie wiring
  * and `persistSession: false`, so it can never pick up or mutate the request's

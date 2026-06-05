@@ -251,16 +251,16 @@ None. No schema, RLS, or view changes — the cascade FKs and live views from F-
 
 #### Automated
 
-- [ ] 1.1 Type checking passes: `npm run lint`
-- [ ] 1.2 Unit/integration tests pass: `npm test`
-- [ ] 1.3 `SUPABASE_SERVICE_ROLE_KEY` read in exactly one production module (`rg … --glob '!*.test.*'` → only `src/lib/supabase-admin.ts`)
-- [ ] 1.4 `createAdminAuthClient` has exactly the two sanctioned write-only importers (`rg … --glob '!*.test.*'` → `supabase-admin.ts` def + `src/actions/index.ts`)
+- [x] 1.1 Type checking passes: `npm run lint`
+- [x] 1.2 Unit/integration tests pass: `npm test`
+- [x] 1.3 `SUPABASE_SERVICE_ROLE_KEY` read in exactly one production module (`rg … --glob '!*.test.*'` → only `src/lib/supabase-admin.ts`)
+- [x] 1.4 `createAdminAuthClient` has exactly the two sanctioned write-only importers (`rg … --glob '!*.test.*'` → `supabase-admin.ts` def + `src/actions/index.ts`)
 
 #### Manual
 
-- [ ] 1.5 Non-admin delete call returns UNAUTHORIZED
-- [ ] 1.6 Admin-role target returns FORBIDDEN
-- [ ] 1.7 Deleting an already-removed id succeeds (idempotent)
+- [x] 1.5 Non-admin delete call returns UNAUTHORIZED
+- [x] 1.6 Admin-role target returns FORBIDDEN
+- [x] 1.7 Deleting an already-removed id succeeds (idempotent)
 
 ### Phase 2: Admin UI — delete control
 

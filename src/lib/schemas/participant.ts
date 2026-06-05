@@ -22,3 +22,10 @@ export const participantCreateSchema = z.object({
 });
 
 export type ParticipantCreateInput = z.infer<typeof participantCreateSchema>;
+
+/** Validates the delete target id (the participant's `auth.users`/`profiles` id). */
+export const participantDeleteSchema = z.object({
+  id: z.uuid(),
+});
+
+export type ParticipantDeleteInput = z.infer<typeof participantDeleteSchema>;

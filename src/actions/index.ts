@@ -6,7 +6,7 @@ import type { Database } from "@/db/database.types";
 import { changeDisplayNameSchema, changePasswordSchema } from "@/lib/schemas/account";
 import { generatePassword } from "@/lib/password";
 import { matchBulkSchema, matchInputSchema, matchUpdateSchema } from "@/lib/schemas/match";
-import { participantCreateSchema } from "@/lib/schemas/participant";
+import { participantCreateSchema, participantDeleteSchema } from "@/lib/schemas/participant";
 import { predictionUpsertSchema } from "@/lib/schemas/prediction";
 import { resultUpsertSchema } from "@/lib/schemas/result";
 import { tournamentSchema } from "@/lib/schemas/tournament";
@@ -204,6 +204,56 @@ export const server = {
         }
 
         return { username: input.username, password };
+      },
+    }),
+    /**
+     * Admin-only participant deletion (FR-004). Order is load-bearing:
+     *   1. `requireAdmin` — refuse non-admins (this is a PUBLIC endpoint).
+     *   2. Read the target's roles on the RLS SSR client (NOT the service-role
+     *      client — keeps that client write-only per the FR-015 invariant). The
+     *      `user_roles` trigger always seeds a `participant` row, so ZERO rows ⇒
+     *      no such user ⇒ idempotent `{ ok: true }` (already gone). Any `admin`
+     *      row ⇒ FORBIDDEN — protects the single admin from self-deletion /
+     *      pool lockout, regardless of what the UI shows.
+     *   3. Delete the `auth.users` row via the isolated service-role client. The
+     *      bare `deleteUser(id)` defaults to `shouldSoftDelete = false` (a HARD
+     *      delete) — this is load-bearing: a SOFT delete keeps the `auth.users`
+     *      row, so the `ON DELETE CASCADE` to profiles/predictions would NOT
+     *      fire and the participant would linger on the leaderboard. NEVER pass
+     *      `shouldSoftDelete: true`. Idempotency is already handled upstream by
+     *      step 2, so any `deleteUser` error here is an unexpected fault →
+     *      `internalError` (the rare delete-between-read-and-delete race still
+     *      leaves the data consistent). The DB cascade removes profile/roles/
+     *      predictions; the live leaderboard/history views drop the participant
+     *      on the next read.
+     */
+    delete: defineAction({
+      accept: "json",
+      input: participantDeleteSchema,
+      handler: async (input, context) => {
+        const supabase = adminClient(context);
+
+        const { data: roles, error: rolesError } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", input.id);
+        if (rolesError) throw internalError(rolesError);
+        // Zero role rows ⇒ no such user (the trigger always seeds one) ⇒ the
+        // target is already gone. Idempotent success.
+        if (roles.length === 0) return { ok: true };
+        if (roles.some((row) => row.role === "admin")) {
+          throw new ActionError({ code: "FORBIDDEN", message: "You can't delete an admin account." });
+        }
+
+        const admin = createAdminAuthClient();
+        if (!admin) {
+          throw new ActionError({ code: "INTERNAL_SERVER_ERROR", message: NOT_CONFIGURED });
+        }
+
+        const { error } = await admin.auth.admin.deleteUser(input.id);
+        if (error) throw internalError(error);
+
+        return { ok: true };
       },
     }),
   },
