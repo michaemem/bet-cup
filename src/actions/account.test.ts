@@ -221,4 +221,33 @@ describe.skipIf(!dbConfigured)("account actions (live DB)", () => {
     });
     expect(oldSignIn.error).not.toBeNull();
   });
+
+  it("signs out other devices on password change (their refresh token is revoked)", async () => {
+    const username = `itest_acct_others_${Date.now().toString()}`;
+    await createUser(username, "Multi Device", "old-pass-1");
+    const email = synthEmail(username);
+
+    // A second "device": an independent session minted before the change.
+    const otherSignIn = await anonClient().auth.signInWithPassword({ email, password: "old-pass-1" });
+    expect(otherSignIn.error).toBeNull();
+    const otherRefreshToken = otherSignIn.data.session?.refresh_token ?? "";
+    expect(otherRefreshToken).not.toBe("");
+
+    // The acting device changes the password (verify → updateUser → signOut others).
+    const context = await authedContext(email, "old-pass-1");
+    const result = await changePassword(
+      changePasswordSchema.parse({
+        currentPassword: "old-pass-1",
+        newPassword: "new-pass-2",
+        confirmPassword: "new-pass-2",
+      }),
+      context,
+    );
+    expect(result.ok).toBe(true);
+
+    // `signOut({ scope: "others" })` revoked every OTHER session: the second
+    // device can no longer refresh. (The acting device's own session is kept.)
+    const refreshed = await anonClient().auth.refreshSession({ refresh_token: otherRefreshToken });
+    expect(refreshed.error).not.toBeNull();
+  });
 });

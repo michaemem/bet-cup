@@ -36,7 +36,7 @@ BetCup is a private prediction pool for one friend group running one football to
 | S-04 | results-scoring-leaderboard | admin enters/corrects a result, per-prediction points compute correctly, post-kickoff predictions become visible, the leaderboard ranks all participants | F-01, S-02, S-03 | US-02, FR-009, FR-010, FR-016, FR-018, FR-019, FR-020 | done |
 | S-05 | participant-match-history | participant reviews their own match-by-match history (prediction, result, points) and views any other participant's revealed (post-kickoff) history from the leaderboard | S-04 | FR-021, FR-021b | done |
 | S-06 | delete-participant | admin removes a participant; their predictions and earned points disappear from history and the leaderboard | S-01, S-04 | FR-004 | proposed |
-| S-07 | participant-changes-password | user (participant or admin) changes their own password and display name from a settings page | F-01 | FR-003, FR-023 | proposed |
+| S-07 | participant-changes-password | user (participant or admin) changes their own password and display name from a settings page | F-01 | FR-003, FR-023 | done |
 
 ## Streams
 
@@ -181,7 +181,7 @@ What's already in place in the codebase as of 2026-05-28 (auto-researched + user
 | S-04 | results-scoring-leaderboard | Admin enters results; scoring computes; leaderboard updates (north star) | no | Unblocks once F-01 + S-02 + S-03 are `done` |
 | S-05 | participant-match-history | Participant views their own and others' revealed match-by-match history (FR-021, FR-021b) | no | Unblocks once S-04 is `done` |
 | S-06 | delete-participant | Admin deletes a participant; predictions and points are removed | no | Unblocks once S-01 + S-04 are `done` |
-| S-07 | participant-changes-password | User (participant or admin) changes their own password and display name | yes | Unblocked (F-01 `done`); deferred under `main_goal: speed` |
+| S-07 | participant-changes-password | User (participant or admin) changes their own password and display name | yes | Landed — `/settings` page; both roles change their own password + display name |
 
 ## Open Roadmap Questions
 

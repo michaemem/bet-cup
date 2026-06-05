@@ -128,7 +128,11 @@ async function verifyCurrentPassword(email: string, password: string): Promise<v
   });
   const { error } = await verifier.auth.signInWithPassword({ email, password });
   if (error) {
-    if (error.code === "invalid_credentials" || error.status === 400) {
+    // GoTrue returns code "invalid_credentials" (HTTP 400) for a wrong
+    // password. Match on the code first; fall back to a bare 400 ONLY when no
+    // code is present, so other GoTrue 400s (validation/bad-request) aren't
+    // mislabeled as "wrong password" and instead surface via internalError.
+    if (error.code === "invalid_credentials" || (!error.code && error.status === 400)) {
       throw inputError("currentPassword", "Current password is incorrect.");
     }
     throw internalError(error);
