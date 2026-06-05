@@ -320,12 +320,12 @@ None — no schema change. Pure read feature over S-04's objects.
 
 #### Automated
 
-- [x] 4.1 Unit suite passes: `npm test`
-- [x] 4.2 Row-builder test passes: `npm test -- history`
-- [x] 4.3 DB/RLS suite passes with Supabase up: `npm test -- rls`
-- [x] 4.4 Type checking passes: `npm run lint`
-- [x] 4.5 Linting passes: `npm run lint`
+- [x] 4.1 Unit suite passes: `npm test` — 7d2ab2a
+- [x] 4.2 Row-builder test passes: `npm test -- history` — 7d2ab2a
+- [x] 4.3 DB/RLS suite passes with Supabase up: `npm test -- rls` — 7d2ab2a
+- [x] 4.4 Type checking passes: `npm run lint` — 7d2ab2a
+- [x] 4.5 Linting passes: `npm run lint` — 7d2ab2a
 
 #### Manual
 
-- [x] 4.6 Removing the `predictor_id` filter makes the blindness test fail (test has teeth)
+- [x] 4.6 Removing the `predictor_id` filter makes the blindness test fail (test has teeth) — 7d2ab2a
