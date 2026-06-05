@@ -3,7 +3,7 @@ project: BetCup
 version: 1
 status: draft
 created: 2026-05-28
-updated: 2026-06-04
+updated: 2026-06-05
 prd_version: 1
 main_goal: speed
 top_blocker: time
@@ -33,7 +33,7 @@ BetCup is a private prediction pool for one friend group running one football to
 | S-01 | admin-creates-participants | admin creates a named participant with an initial password and that participant logs in successfully | F-01 | FR-001, FR-002 | done |
 | S-02 | tournament-and-matches | admin creates the tournament and populates its match list (one-by-one or via bulk paste), and edits matches before kickoff | F-01 | FR-006, FR-007, FR-008, FR-022 | done |
 | S-03 | prediction-with-blindness | participant submits and edits a prediction before kickoff; only the predictor can see it; after kickoff editing is blocked | F-01, S-02 | US-01, FR-011, FR-012, FR-013, FR-014, FR-015, FR-017 | done |
-| S-04 | results-scoring-leaderboard | admin enters/corrects a result, per-prediction points compute correctly, post-kickoff predictions become visible, the leaderboard ranks all participants | F-01, S-02, S-03 | US-02, FR-009, FR-010, FR-016, FR-018, FR-019, FR-020 | proposed |
+| S-04 | results-scoring-leaderboard | admin enters/corrects a result, per-prediction points compute correctly, post-kickoff predictions become visible, the leaderboard ranks all participants | F-01, S-02, S-03 | US-02, FR-009, FR-010, FR-016, FR-018, FR-019, FR-020 | done |
 | S-05 | participant-match-history | participant reviews their own match-by-match history showing prediction, result, and points earned | S-04 | FR-021 | proposed |
 | S-06 | delete-participant | admin removes a participant; their predictions and earned points disappear from history and the leaderboard | S-01, S-04 | FR-004 | proposed |
 | S-07 | participant-changes-password | participant changes their own password from a settings page after first login | F-01 | FR-003 | proposed |
@@ -131,7 +131,7 @@ What's already in place in the codebase as of 2026-05-28 (auto-researched + user
   - Scoring computation strategy: a Postgres view that computes points on read (always-correct, never stale, more read cost) vs. a materialized score column written when a result is entered/corrected (faster reads, has to be invalidated on every result edit). Owner: `/10x-plan`. Block: no.
   - Leaderboard tie-break rule: **RESOLVED 2026-05-28 (#9).** Rank by total points; break ties by exact-score-prediction count (more 3-pointers wins); if still tied, alphabetical by participant name (case-insensitive, ascending). See `## Open Roadmap Questions` §1.
 - **Risk:** scoring correctness is the second `## Success Criteria` guardrail. An off-by-one in the goal-difference branch of FR-018 silently rewards or penalizes participants; the rule is small enough to be unit-tested exhaustively against a 4×4 grid of sample (prediction, result) pairs, and that test pinning is the mitigation.
-- **Status:** proposed
+- **Status:** done
 
 ### S-05: Participant match-by-match history
 
@@ -207,6 +207,7 @@ _All roadmap questions resolved. Decisions recorded inline below and reflected i
 - **S-02: admin creates the (single) tournament with a name, populates its match list either by entering matches one-by-one (home, away, kickoff) or by pasting a multi-line list in a fixed format with parsed-preview-then-confirm, and edits any match's teams or kickoff before that match's kickoff.** — Archived 2026-06-03 → `context/archive/2026-06-01-tournament-and-matches/`. Lesson: —.
 - **S-01: admin creates a named participant by entering name, login, and an initial password; the participant logs in successfully on the next attempt with those credentials.** — Archived 2026-06-04 → `context/archive/2026-06-03-admin-creates-participants/`. Lesson: —.
 - **S-03: logged-in participant views the full match list with kickoff times; for any match whose kickoff is in the future, they enter and confirm a (home, away) prediction; they can return and edit that prediction any time before kickoff; only they can see their prediction before kickoff (no other participant, not the admin); after kickoff the UI clearly indicates the match is locked. The admin (also a participant per FR-017) is subject to the same lock and the same blindness rule.** — Archived 2026-06-04 → `context/archive/2026-06-04-prediction-with-blindness/`. Lesson: —.
+- **S-04: admin views a kickoff-passed match with no result entered, enters home/away scores and confirms; every participant's prediction for that match is scored per FR-018 (3 / 2 / 1 / 0); the post-kickoff predictions become visible to all participants (FR-016); the leaderboard ranks all participants by total points across all played matches and reflects the new totals immediately. If the admin re-enters the result, all affected per-prediction scores recompute and the leaderboard updates.** — Archived 2026-06-05 → `context/archive/2026-06-04-results-scoring-leaderboard/`. Lesson: —.
 
 ## GitHub issues
 
