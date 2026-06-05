@@ -1,9 +1,9 @@
 ---
 change_id: results-scoring-leaderboard
 title: Admin enters results, scoring computes, and the leaderboard updates (north star)
-status: planned
+status: implementing
 created: 2026-06-04
-updated: 2026-06-04
+updated: 2026-06-05
 archived_at: null
 ---
 

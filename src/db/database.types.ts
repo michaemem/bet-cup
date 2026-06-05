@@ -34,6 +34,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      match_results: {
+        Row: {
+          away_score: number
+          created_at: string
+          home_score: number
+          id: string
+          match_id: string
+          updated_at: string
+        }
+        Insert: {
+          away_score: number
+          created_at?: string
+          home_score: number
+          id?: string
+          match_id: string
+          updated_at?: string
+        }
+        Update: {
+          away_score?: number
+          created_at?: string
+          home_score?: number
+          id?: string
+          match_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_results_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: true
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       matches: {
         Row: {
           away_team: string
@@ -107,6 +142,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "matches"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "predictions_predictor_id_fkey"
+            columns: ["predictor_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["participant_id"]
           },
           {
             foreignKeyName: "predictions_predictor_id_fkey"
@@ -198,6 +240,56 @@ export type Database = {
       }
     }
     Views: {
+      leaderboard: {
+        Row: {
+          display_name: string | null
+          exact_scores: number | null
+          participant_id: string | null
+          total_points: number | null
+        }
+        Relationships: []
+      }
+      prediction_scores: {
+        Row: {
+          away_goals: number | null
+          away_score: number | null
+          home_goals: number | null
+          home_score: number | null
+          match_id: string | null
+          points: number | null
+          predictor_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "predictions_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "predictions_predictor_id_fkey"
+            columns: ["predictor_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["participant_id"]
+          },
+          {
+            foreignKeyName: "predictions_predictor_id_fkey"
+            columns: ["predictor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "predictions_predictor_id_fkey"
+            columns: ["predictor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles_public: {
         Row: {
           created_at: string | null
@@ -228,6 +320,10 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       is_participant: { Args: never; Returns: boolean }
       match_is_kicked_off: { Args: { p_match_id: string }; Returns: boolean }
+      score_prediction: {
+        Args: { p_away: number; p_home: number; r_away: number; r_home: number }
+        Returns: number
+      }
     }
     Enums: {
       user_role: "admin" | "participant"
