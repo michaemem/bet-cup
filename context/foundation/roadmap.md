@@ -168,7 +168,7 @@ What's already in place in the codebase as of 2026-05-28 (auto-researched + user
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** lowest-risk slice; Supabase auth has a built-in `updateUser({ password })` flow. Sequenced last under `main_goal: speed` because it's orthogonal to the chain of must-have FRs that lead to the north star (F-01 → S-02 → S-03 → S-04) — but it remains must-have because the admin-set initial-password handoff is incomplete without a way for the participant to rotate it.
-- **Status:** proposed
+- **Status:** done
 
 ## Backlog Handoff
 
@@ -209,6 +209,7 @@ _All roadmap questions resolved. Decisions recorded inline below and reflected i
 - **S-03: logged-in participant views the full match list with kickoff times; for any match whose kickoff is in the future, they enter and confirm a (home, away) prediction; they can return and edit that prediction any time before kickoff; only they can see their prediction before kickoff (no other participant, not the admin); after kickoff the UI clearly indicates the match is locked. The admin (also a participant per FR-017) is subject to the same lock and the same blindness rule.** — Archived 2026-06-04 → `context/archive/2026-06-04-prediction-with-blindness/`. Lesson: —.
 - **S-04: admin views a kickoff-passed match with no result entered, enters home/away scores and confirms; every participant's prediction for that match is scored per FR-018 (3 / 2 / 1 / 0); the post-kickoff predictions become visible to all participants (FR-016); the leaderboard ranks all participants by total points across all played matches and reflects the new totals immediately. If the admin re-enters the result, all affected per-prediction scores recompute and the leaderboard updates.** — Archived 2026-06-05 → `context/archive/2026-06-04-results-scoring-leaderboard/`. Lesson: —.
 - **S-05: (a) participant opens a "my history" view and sees their own prediction, the actual result (when entered), and the points earned for each match they predicted or that has a result; a match they predicted but that has no result yet is listed showing the prediction but no points; future matches they have not predicted are omitted. Their running point total matches the leaderboard total for them. (b) clicking any name on the leaderboard opens that participant's history, showing only kicked-off matches — their revealed predictions, results, and points — never their pre-kickoff picks (blindness preserved per FR-015). Listing rule (both views): a match appears when the viewed participant has a prediction for it or a result exists.** — Archived 2026-06-05 → `context/archive/2026-06-05-participant-match-history/`. Lesson: —.
+- **S-07: any logged-in user (participant or admin) opens a settings page where they can (a) change their display name — the name shown on the leaderboard and in other participants' revealed history — and (b) change their password. Each change requires confirming the current password; a successful password change signs out the user's other sessions (the current device stays signed in), the old password no longer works, and subsequent logins use the new password. The display-name change propagates to the dashboard, leaderboard, and history views.** — Archived 2026-06-05 → `context/archive/2026-06-05-participant-changes-password/`. Lesson: —.
 
 ## GitHub issues
 
