@@ -302,6 +302,6 @@ None. No schema or RLS changes; existing `profiles_update` policy and `auth.user
 
 #### Manual
 
-- [x] 3.1 FR-003 reads role-agnostically; new FR-023 present and consistent
-- [x] 3.2 Roadmap S-07 outcome and PRD refs match shipped feature; no dangling Unknowns
-- [x] 3.3 No contradictions between PRD, roadmap, and implemented actions
+- [x] 3.1 FR-003 reads role-agnostically; new FR-023 present and consistent — f224760
+- [x] 3.2 Roadmap S-07 outcome and PRD refs match shipped feature; no dangling Unknowns — f224760
+- [x] 3.3 No contradictions between PRD, roadmap, and implemented actions — f224760
