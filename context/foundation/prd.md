@@ -79,10 +79,11 @@ Existing tournament-prediction apps (Kicktipp, Superbru, sweepstakes spreadsheet
 
 - FR-001: Admin can create a participant account by entering name, login (email or username), and an initial password. Priority: must-have
 - FR-002: Participant can log in with their login and password. Priority: must-have
-- FR-003: Participant can change their own password after logging in. Priority: must-have
+- FR-003: User (participant or admin) can change their own password after logging in; changing it requires confirming the current password and signs out other sessions. Priority: must-have
 - FR-004: Admin can delete a participant account; that participant's predictions and earned points are removed from the leaderboard. Deletion is a cascade-delete (hard delete of the participant row plus their predictions and earned points); no soft-delete / audit trail is retained in the MVP. Priority: must-have
   > Decision (2026-05-28, roadmap Q-02 / #10): cascade-delete chosen over soft-delete — the PRD wording reads as a hard delete, the MVP is single-tournament so an audit trail has no consumer, and a forgotten "inactive" filter in a future query would be a silent leaderboard bug.
 - FR-005: Unauthenticated visitor is redirected to the login page from any other route. Priority: must-have
+- FR-023: User (participant or admin) can change their own display name — the name shown on the leaderboard and in other participants' revealed history. Changing it requires confirming the current password; display names need not be unique. Priority: must-have
 
 ### Tournament & Match Management
 
@@ -138,7 +139,7 @@ Two roles: **admin** and **participant**.
 - **Admin** can: create participant accounts, create the tournament, add matches (teams, date, time), enter actual match results, and view the leaderboard. There is exactly one admin in the MVP.
 - **Participant** can: log in with their own credentials, submit and edit their predictions before kickoff, view the leaderboard, and view their own past predictions and scores. Participants cannot see other participants' predictions until kickoff.
 
-**Authentication.** Login + password. No self-registration — accounts only come into existence when the admin creates them. The admin sets each participant's initial password and shares it out-of-band (chat, in person, etc.); the participant can change it after first login.
+**Authentication.** Login + password. No self-registration — accounts only come into existence when the admin creates them. The admin sets each participant's initial password and shares it out-of-band (chat, in person, etc.). Both roles (participant and admin) can change their own password and display name from a settings page after logging in; each change requires confirming the current password, and a password change signs out the user's other sessions.
 
 **Unauthenticated access.** Any route except the login page redirects unauthenticated users to login. There is no public landing page; BetCup is private by default.
 

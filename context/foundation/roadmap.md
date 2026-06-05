@@ -36,7 +36,7 @@ BetCup is a private prediction pool for one friend group running one football to
 | S-04 | results-scoring-leaderboard | admin enters/corrects a result, per-prediction points compute correctly, post-kickoff predictions become visible, the leaderboard ranks all participants | F-01, S-02, S-03 | US-02, FR-009, FR-010, FR-016, FR-018, FR-019, FR-020 | done |
 | S-05 | participant-match-history | participant reviews their own match-by-match history (prediction, result, points) and views any other participant's revealed (post-kickoff) history from the leaderboard | S-04 | FR-021, FR-021b | done |
 | S-06 | delete-participant | admin removes a participant; their predictions and earned points disappear from history and the leaderboard | S-01, S-04 | FR-004 | proposed |
-| S-07 | participant-changes-password | participant changes their own password from a settings page after first login | F-01 | FR-003 | proposed |
+| S-07 | participant-changes-password | user (participant or admin) changes their own password and display name from a settings page | F-01 | FR-003, FR-023 | proposed |
 
 ## Streams
 
@@ -158,11 +158,11 @@ What's already in place in the codebase as of 2026-05-28 (auto-researched + user
 - **Risk:** a deletion that doesn't cascade through to the leaderboard would leave a "ghost" entry — confusing but not security-breaking. Asserting absence in an integration test after delete is the mitigation.
 - **Status:** proposed
 
-### S-07: Participant changes their own password
+### S-07: User changes their own password and display name
 
-- **Outcome:** logged-in participant opens a settings page, enters their current password and a new password, confirms; subsequent logins use the new password and the old password no longer works.
+- **Outcome:** any logged-in user (participant or admin) opens a settings page where they can (a) change their display name — the name shown on the leaderboard and in other participants' revealed history — and (b) change their password. Each change requires confirming the current password; a successful password change signs out the user's other sessions (the current device stays signed in), the old password no longer works, and subsequent logins use the new password. The display-name change propagates to the dashboard, leaderboard, and history views.
 - **Change ID:** `participant-changes-password`
-- **PRD refs:** FR-003
+- **PRD refs:** FR-003, FR-023
 - **Prerequisites:** F-01
 - **Parallel with:** S-01, S-02, S-05, S-06
 - **Blockers:** —
@@ -181,7 +181,7 @@ What's already in place in the codebase as of 2026-05-28 (auto-researched + user
 | S-04 | results-scoring-leaderboard | Admin enters results; scoring computes; leaderboard updates (north star) | no | Unblocks once F-01 + S-02 + S-03 are `done` |
 | S-05 | participant-match-history | Participant views their own and others' revealed match-by-match history (FR-021, FR-021b) | no | Unblocks once S-04 is `done` |
 | S-06 | delete-participant | Admin deletes a participant; predictions and points are removed | no | Unblocks once S-01 + S-04 are `done` |
-| S-07 | participant-changes-password | Participant changes their own password | yes | Unblocked (F-01 `done`); deferred under `main_goal: speed` |
+| S-07 | participant-changes-password | User (participant or admin) changes their own password and display name | yes | Unblocked (F-01 `done`); deferred under `main_goal: speed` |
 
 ## Open Roadmap Questions
 

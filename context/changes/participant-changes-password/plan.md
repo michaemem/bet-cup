@@ -287,21 +287,21 @@ None. No schema or RLS changes; existing `profiles_update` policy and `auth.user
 
 #### Automated
 
-- [x] 2.1 Lint/type check passes: `npm run lint`
-- [x] 2.2 Production build succeeds: `npm run build`
+- [x] 2.1 Lint/type check passes: `npm run lint` — dfde5fa
+- [x] 2.2 Production build succeeds: `npm run build` — dfde5fa
 
 #### Manual
 
-- [x] 2.3 `/settings` loads for participant and admin; unauth redirects to `/auth/signin`
-- [x] 2.4 Display-name change propagates to dashboard, leaderboard, history title after reload
-- [x] 2.5 Wrong current password shows inline error in both forms
-- [x] 2.6 Password form: mismatch and same-as-current show inline errors; valid change signs out other session, keeps current
+- [x] 2.3 `/settings` loads for participant and admin; unauth redirects to `/auth/signin` — dfde5fa
+- [x] 2.4 Display-name change propagates to dashboard, leaderboard, history title after reload — dfde5fa
+- [x] 2.5 Wrong current password shows inline error in both forms — dfde5fa
+- [x] 2.6 Password form: mismatch and same-as-current show inline errors; valid change signs out other session, keeps current — dfde5fa
 - [ ] 2.7 Layout consistent with other participant pages on desktop + mobile
 
 ### Phase 3: PRD + roadmap documentation
 
 #### Manual
 
-- [ ] 3.1 FR-003 reads role-agnostically; new FR-023 present and consistent
-- [ ] 3.2 Roadmap S-07 outcome and PRD refs match shipped feature; no dangling Unknowns
-- [ ] 3.3 No contradictions between PRD, roadmap, and implemented actions
+- [x] 3.1 FR-003 reads role-agnostically; new FR-023 present and consistent
+- [x] 3.2 Roadmap S-07 outcome and PRD refs match shipped feature; no dangling Unknowns
+- [x] 3.3 No contradictions between PRD, roadmap, and implemented actions
