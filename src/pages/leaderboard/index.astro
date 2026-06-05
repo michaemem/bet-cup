@@ -74,7 +74,11 @@ const hasResults = rows.some((row) => row.totalPoints > 0);
               {rows.map((row, index) => (
                 <tr class="border-b">
                   <td class="py-2 tabular-nums">{index + 1}</td>
-                  <td class="py-2">{row.displayName}</td>
+                  <td class="py-2">
+                    <a href={`/history/${row.participantId}`} class="underline hover:no-underline">
+                      {row.displayName}
+                    </a>
+                  </td>
                   <td class="py-2 text-right font-medium tabular-nums">{row.totalPoints}</td>
                   <td class="text-muted-foreground py-2 text-right tabular-nums">{row.exactScores}</td>
                 </tr>

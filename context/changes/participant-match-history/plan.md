@@ -290,31 +290,31 @@ None — no schema change. Pure read feature over S-04's objects.
 
 #### Automated
 
-- [x] 2.1 Type checking passes: `npm run lint`
-- [x] 2.2 Linting passes: `npm run lint`
-- [x] 2.3 Production build passes: `npm run build`
+- [x] 2.1 Type checking passes: `npm run lint` — 1996fb2
+- [x] 2.2 Linting passes: `npm run lint` — 1996fb2
+- [x] 2.3 Production build passes: `npm run build` — 1996fb2
 
 #### Manual
 
-- [x] 2.4 `/history` shows predicted matches; predicted-but-unresulted shows prediction only
-- [x] 2.5 Resulted match shows prediction + result + points; running total equals leaderboard total
-- [x] 2.6 Future unpredicted match does not appear
-- [x] 2.7 Dashboard "My history" link works; unauthenticated access redirects to sign-in
+- [x] 2.4 `/history` shows predicted matches; predicted-but-unresulted shows prediction only — 1996fb2
+- [x] 2.5 Resulted match shows prediction + result + points; running total equals leaderboard total — 1996fb2
+- [x] 2.6 Future unpredicted match does not appear — 1996fb2
+- [x] 2.7 Dashboard "My history" link works; unauthenticated access redirects to sign-in — 1996fb2
 
 ### Phase 3: Cross-participant drill-in (`/history/[participantId]`)
 
 #### Automated
 
-- [ ] 3.1 Type checking passes: `npm run lint`
-- [ ] 3.2 Linting passes: `npm run lint`
-- [ ] 3.3 Production build passes: `npm run build`
+- [x] 3.1 Type checking passes: `npm run lint`
+- [x] 3.2 Linting passes: `npm run lint`
+- [x] 3.3 Production build passes: `npm run build`
 
 #### Manual
 
-- [ ] 3.4 Clicking a leaderboard name opens that participant's history
-- [ ] 3.5 Other participant's page lists kicked-off matches only; no pre-kickoff prediction shown
-- [ ] 3.6 Kicked-off-but-unresulted match shows the other's revealed prediction, no result/points
-- [ ] 3.7 `/history/<own-id>` redirects to `/history`; unknown UUID and malformed non-UUID id both show not-found state
+- [x] 3.4 Clicking a leaderboard name opens that participant's history
+- [x] 3.5 Other participant's page lists kicked-off matches only; no pre-kickoff prediction shown
+- [x] 3.6 Kicked-off-but-unresulted match shows the other's revealed prediction, no result/points
+- [x] 3.7 `/history/<own-id>` redirects to `/history`; unknown UUID and malformed non-UUID id both show not-found state
 
 ### Phase 4: Tests (blindness + consistency + row logic)
 
