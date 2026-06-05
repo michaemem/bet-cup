@@ -1,0 +1,88 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { createClient } from "@/lib/supabase";
+
+// All-authenticated surface (middleware default-deny gate — no admin role
+// required). Reads the `leaderboard` view server-side under RLS. The view is
+// security_invoker = true, but every scored prediction is already world-visible
+// post-kickoff (the S-04 invariant), so the standings are both complete (every
+// participant, 0 for non-predictors — FR-019) and leak-free.
+const supabase = createClient(Astro.request.headers, Astro.cookies);
+const userId = Astro.locals.user?.id ?? null;
+
+interface LeaderboardRow {
+  participantId: string;
+  displayName: string;
+  totalPoints: number;
+  exactScores: number;
+}
+
+let rows: LeaderboardRow[] = [];
+
+if (supabase && userId) {
+  // No explicit .order(): the view carries the FR-020 tie-break ORDER BY
+  // (total_points desc, exact-score count desc, then display_name).
+  const { data, error } = await supabase
+    .from("leaderboard")
+    .select("participant_id, display_name, total_points, exact_scores");
+  if (error) {
+    console.error("leaderboard: failed to load standings", error);
+    return new Response("Failed to load leaderboard", { status: 500 });
+  }
+  rows = data.map((row) => ({
+    participantId: row.participant_id ?? "",
+    displayName: row.display_name ?? "—",
+    totalPoints: row.total_points ?? 0,
+    exactScores: row.exact_scores ?? 0,
+  }));
+}
+
+const hasResults = rows.some((row) => row.totalPoints > 0);
+---
+
+<Layout title="Leaderboard">
+  <main class="mx-auto max-w-3xl space-y-6 p-6">
+    <header>
+      <h1 class="text-2xl font-bold">Leaderboard</h1>
+      <p class="text-muted-foreground text-sm">
+        Standings across all participants. 3 points for an exact score, 2 for the right goal difference, 1 for the right
+        result.
+      </p>
+      <a href="/dashboard" class="mt-2 inline-block text-sm underline">Back to dashboard</a>
+    </header>
+
+    {
+      rows.length === 0 ? (
+        <p class="text-muted-foreground text-sm">No participants yet.</p>
+      ) : (
+        <section class="space-y-4">
+          {!hasResults && (
+            <p class="text-muted-foreground text-sm">
+              No results entered yet — standings appear once the admin enters a result.
+            </p>
+          )}
+          <table class="w-full text-left text-sm">
+            <thead>
+              <tr class="border-b">
+                <th class="w-12 py-2 font-medium">#</th>
+                <th class="py-2 font-medium">Participant</th>
+                <th class="py-2 text-right font-medium">Points</th>
+                <th class="py-2 text-right font-medium">Exact</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, index) => (
+                <tr class="border-b">
+                  <td class="py-2 tabular-nums">{index + 1}</td>
+                  <td class="py-2">{row.displayName}</td>
+                  <td class="py-2 text-right font-medium tabular-nums">{row.totalPoints}</td>
+                  <td class="text-muted-foreground py-2 text-right tabular-nums">{row.exactScores}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )
+    }
+  </main>
+</Layout>

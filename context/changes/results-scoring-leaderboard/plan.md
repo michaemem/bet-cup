@@ -328,33 +328,33 @@ Single forward-only migration; no data backfill (no prior results exist). `match
 
 - [x] 2.5 Participant call to `actions.results.upsert` rejected `UNAUTHORIZED` before any DB call — 364683d
 - [ ] 2.6 Upsert on a future-kickoff match returns the friendly "not kicked off" error
-- [ ] 2.7 Re-upsert updates the single `match_results` row
+- [x] 2.7 Re-upsert updates the single `match_results` row
 
 ### Phase 3: Admin result-entry UI
 
 #### Automated
 
-- [x] 3.1 Type checking passes: `npm run lint`
-- [x] 3.2 Linting passes: `npm run lint`
-- [x] 3.3 Production build passes: `npm run build`
+- [x] 3.1 Type checking passes: `npm run lint` — 295dc9f
+- [x] 3.2 Linting passes: `npm run lint` — 295dc9f
+- [x] 3.3 Production build passes: `npm run build` — 295dc9f
 
 #### Manual
 
-- [ ] 3.4 Past match on `/admin` shows a score form; entry persists across reload
-- [ ] 3.5 Saved result is editable; future-kickoff match shows no result form
-- [ ] 3.6 Non-admin is redirected away from `/admin`
+- [x] 3.4 Past match on `/admin` shows a score form; entry persists across reload
+- [x] 3.5 Saved result is editable; future-kickoff match shows no result form
+- [x] 3.6 Non-admin is redirected away from `/admin`
 
 ### Phase 4: Leaderboard page
 
 #### Automated
 
-- [ ] 4.1 Type checking passes: `npm run lint`
-- [ ] 4.2 Linting passes: `npm run lint`
-- [ ] 4.3 Production build passes: `npm run build`
+- [x] 4.1 Type checking passes: `npm run lint`
+- [x] 4.2 Linting passes: `npm run lint`
+- [x] 4.3 Production build passes: `npm run build`
 
 #### Manual
 
-- [ ] 4.4 `/leaderboard` lists every participant (incl. admin); non-predictor shows 0
-- [ ] 4.5 Totals/order update after a result entry and after a correction
+- [x] 4.4 `/leaderboard` lists every participant (incl. admin); non-predictor shows 0
+- [x] 4.5 Totals/order update after a result entry and after a correction
 - [ ] 4.6 Tie broken by exact-score count, then alphabetically
-- [ ] 4.7 Post-kickoff predictions visible to all; pre-kickoff still hidden
+- [x] 4.7 Post-kickoff predictions visible to all; pre-kickoff still hidden
