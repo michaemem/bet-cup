@@ -43,6 +43,19 @@ if (supabase) {
       return new Response("Failed to load matches", { status: 500 });
     }
 
+    // Saved results for these matches, keyed by match_id so the list can
+    // pre-fill the inline result form for correction (FR-010).
+    const { data: results, error: resultsError } = await supabase
+      .from("match_results")
+      .select("match_id, home_score, away_score");
+    if (resultsError) {
+      console.error("admin: failed to load results", resultsError);
+      return new Response("Failed to load results", { status: 500 });
+    }
+    const resultByMatchId = new Map(
+      results.map((result) => [result.match_id, { homeScore: result.home_score, awayScore: result.away_score }]),
+    );
+
     const now = Date.now();
     matchRows = matches.map((match) => {
       const utc = new Date(match.kickoff_time);
@@ -52,6 +65,7 @@ if (supabase) {
         awayTeam: match.away_team,
         kickoffLocal: formatInZone(utc, zone),
         isPast: utc.getTime() <= now,
+        result: resultByMatchId.get(match.id) ?? null,
       };
     });
   }

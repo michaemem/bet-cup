@@ -319,14 +319,14 @@ Single forward-only migration; no data backfill (no prior results exist). `match
 
 #### Automated
 
-- [x] 2.1 Type checking passes: `npm run lint`
-- [x] 2.2 Linting passes: `npm run lint`
-- [x] 2.3 Existing Action tests still pass: `npm test`
-- [x] 2.4 Admin-guard test passes (if added): `npm test`
+- [x] 2.1 Type checking passes: `npm run lint` — 364683d
+- [x] 2.2 Linting passes: `npm run lint` — 364683d
+- [x] 2.3 Existing Action tests still pass: `npm test` — 364683d
+- [x] 2.4 Admin-guard test passes (if added): `npm test` — 364683d
 
 #### Manual
 
-- [x] 2.5 Participant call to `actions.results.upsert` rejected `UNAUTHORIZED` before any DB call
+- [x] 2.5 Participant call to `actions.results.upsert` rejected `UNAUTHORIZED` before any DB call — 364683d
 - [ ] 2.6 Upsert on a future-kickoff match returns the friendly "not kicked off" error
 - [ ] 2.7 Re-upsert updates the single `match_results` row
 
@@ -334,9 +334,9 @@ Single forward-only migration; no data backfill (no prior results exist). `match
 
 #### Automated
 
-- [ ] 3.1 Type checking passes: `npm run lint`
-- [ ] 3.2 Linting passes: `npm run lint`
-- [ ] 3.3 Production build passes: `npm run build`
+- [x] 3.1 Type checking passes: `npm run lint`
+- [x] 3.2 Linting passes: `npm run lint`
+- [x] 3.3 Production build passes: `npm run build`
 
 #### Manual
 
