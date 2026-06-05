@@ -305,27 +305,27 @@ None — no schema change. Pure read feature over S-04's objects.
 
 #### Automated
 
-- [x] 3.1 Type checking passes: `npm run lint`
-- [x] 3.2 Linting passes: `npm run lint`
-- [x] 3.3 Production build passes: `npm run build`
+- [x] 3.1 Type checking passes: `npm run lint` — f66b6dc
+- [x] 3.2 Linting passes: `npm run lint` — f66b6dc
+- [x] 3.3 Production build passes: `npm run build` — f66b6dc
 
 #### Manual
 
-- [x] 3.4 Clicking a leaderboard name opens that participant's history
-- [x] 3.5 Other participant's page lists kicked-off matches only; no pre-kickoff prediction shown
-- [x] 3.6 Kicked-off-but-unresulted match shows the other's revealed prediction, no result/points
-- [x] 3.7 `/history/<own-id>` redirects to `/history`; unknown UUID and malformed non-UUID id both show not-found state
+- [x] 3.4 Clicking a leaderboard name opens that participant's history — f66b6dc
+- [x] 3.5 Other participant's page lists kicked-off matches only; no pre-kickoff prediction shown — f66b6dc
+- [x] 3.6 Kicked-off-but-unresulted match shows the other's revealed prediction, no result/points — f66b6dc
+- [x] 3.7 `/history/<own-id>` redirects to `/history`; unknown UUID and malformed non-UUID id both show not-found state — f66b6dc
 
 ### Phase 4: Tests (blindness + consistency + row logic)
 
 #### Automated
 
-- [ ] 4.1 Unit suite passes: `npm test`
-- [ ] 4.2 Row-builder test passes: `npm test -- history`
-- [ ] 4.3 DB/RLS suite passes with Supabase up: `npm test -- rls`
-- [ ] 4.4 Type checking passes: `npm run lint`
-- [ ] 4.5 Linting passes: `npm run lint`
+- [x] 4.1 Unit suite passes: `npm test`
+- [x] 4.2 Row-builder test passes: `npm test -- history`
+- [x] 4.3 DB/RLS suite passes with Supabase up: `npm test -- rls`
+- [x] 4.4 Type checking passes: `npm run lint`
+- [x] 4.5 Linting passes: `npm run lint`
 
 #### Manual
 
-- [ ] 4.6 Removing the `predictor_id` filter makes the blindness test fail (test has teeth)
+- [x] 4.6 Removing the `predictor_id` filter makes the blindness test fail (test has teeth)
