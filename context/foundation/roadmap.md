@@ -35,7 +35,7 @@ BetCup is a private prediction pool for one friend group running one football to
 | S-03 | prediction-with-blindness | participant submits and edits a prediction before kickoff; only the predictor can see it; after kickoff editing is blocked | F-01, S-02 | US-01, FR-011, FR-012, FR-013, FR-014, FR-015, FR-017 | done |
 | S-04 | results-scoring-leaderboard | admin enters/corrects a result, per-prediction points compute correctly, post-kickoff predictions become visible, the leaderboard ranks all participants | F-01, S-02, S-03 | US-02, FR-009, FR-010, FR-016, FR-018, FR-019, FR-020 | done |
 | S-05 | participant-match-history | participant reviews their own match-by-match history (prediction, result, points) and views any other participant's revealed (post-kickoff) history from the leaderboard | S-04 | FR-021, FR-021b | done |
-| S-06 | delete-participant | admin removes a participant; their predictions and earned points disappear from history and the leaderboard | S-01, S-04 | FR-004 | proposed |
+| S-06 | delete-participant | admin removes a participant; their predictions and earned points disappear from history and the leaderboard | S-01, S-04 | FR-004 | done |
 | S-07 | participant-changes-password | user (participant or admin) changes their own password and display name from a settings page | F-01 | FR-003, FR-023 | done |
 
 ## Streams
@@ -156,7 +156,7 @@ What's already in place in the codebase as of 2026-05-28 (auto-researched + user
 - **Unknowns:**
   - Delete shape: **RESOLVED 2026-05-28 (#10).** Cascade-delete — hard delete of the participant row plus their predictions and earned points. See `## Open Roadmap Questions` §2.
 - **Risk:** a deletion that doesn't cascade through to the leaderboard would leave a "ghost" entry — confusing but not security-breaking. Asserting absence in an integration test after delete is the mitigation.
-- **Status:** proposed
+- **Status:** done
 
 ### S-07: User changes their own password and display name
 
@@ -210,6 +210,7 @@ _All roadmap questions resolved. Decisions recorded inline below and reflected i
 - **S-04: admin views a kickoff-passed match with no result entered, enters home/away scores and confirms; every participant's prediction for that match is scored per FR-018 (3 / 2 / 1 / 0); the post-kickoff predictions become visible to all participants (FR-016); the leaderboard ranks all participants by total points across all played matches and reflects the new totals immediately. If the admin re-enters the result, all affected per-prediction scores recompute and the leaderboard updates.** — Archived 2026-06-05 → `context/archive/2026-06-04-results-scoring-leaderboard/`. Lesson: —.
 - **S-05: (a) participant opens a "my history" view and sees their own prediction, the actual result (when entered), and the points earned for each match they predicted or that has a result; a match they predicted but that has no result yet is listed showing the prediction but no points; future matches they have not predicted are omitted. Their running point total matches the leaderboard total for them. (b) clicking any name on the leaderboard opens that participant's history, showing only kicked-off matches — their revealed predictions, results, and points — never their pre-kickoff picks (blindness preserved per FR-015). Listing rule (both views): a match appears when the viewed participant has a prediction for it or a result exists.** — Archived 2026-06-05 → `context/archive/2026-06-05-participant-match-history/`. Lesson: —.
 - **S-07: any logged-in user (participant or admin) opens a settings page where they can (a) change their display name — the name shown on the leaderboard and in other participants' revealed history — and (b) change their password. Each change requires confirming the current password; a successful password change signs out the user's other sessions (the current device stays signed in), the old password no longer works, and subsequent logins use the new password. The display-name change propagates to the dashboard, leaderboard, and history views.** — Archived 2026-06-05 → `context/archive/2026-06-05-participant-changes-password/`. Lesson: —.
+- **S-06: admin removes a participant from a "manage participants" view; that participant's predictions and earned points disappear from any other participant's history view and from the leaderboard (the deleted participant no longer appears in standings).** — Archived 2026-06-05 → `context/archive/2026-06-05-delete-participant/`. Lesson: —.
 
 ## GitHub issues
 
