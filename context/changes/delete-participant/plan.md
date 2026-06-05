@@ -251,33 +251,33 @@ None. No schema, RLS, or view changes — the cascade FKs and live views from F-
 
 #### Automated
 
-- [x] 1.1 Type checking passes: `npm run lint`
-- [x] 1.2 Unit/integration tests pass: `npm test`
-- [x] 1.3 `SUPABASE_SERVICE_ROLE_KEY` read in exactly one production module (`rg … --glob '!*.test.*'` → only `src/lib/supabase-admin.ts`)
-- [x] 1.4 `createAdminAuthClient` has exactly the two sanctioned write-only importers (`rg … --glob '!*.test.*'` → `supabase-admin.ts` def + `src/actions/index.ts`)
+- [x] 1.1 Type checking passes: `npm run lint` — 26361e3
+- [x] 1.2 Unit/integration tests pass: `npm test` — 26361e3
+- [x] 1.3 `SUPABASE_SERVICE_ROLE_KEY` read in exactly one production module (`rg … --glob '!*.test.*'` → only `src/lib/supabase-admin.ts`) — 26361e3
+- [x] 1.4 `createAdminAuthClient` has exactly the two sanctioned write-only importers (`rg … --glob '!*.test.*'` → `supabase-admin.ts` def + `src/actions/index.ts`) — 26361e3
 
 #### Manual
 
-- [x] 1.5 Non-admin delete call returns UNAUTHORIZED
-- [x] 1.6 Admin-role target returns FORBIDDEN
-- [x] 1.7 Deleting an already-removed id succeeds (idempotent)
+- [x] 1.5 Non-admin delete call returns UNAUTHORIZED — 26361e3
+- [x] 1.6 Admin-role target returns FORBIDDEN — 26361e3
+- [x] 1.7 Deleting an already-removed id succeeds (idempotent) — 26361e3
 
 ### Phase 2: Admin UI — delete control
 
 #### Automated
 
-- [ ] 2.1 Type checking + lint pass: `npm run lint`
-- [ ] 2.2 Build passes: `npm run build`
-- [ ] 2.3 `src/components/ui/alert-dialog.tsx` present
+- [x] 2.1 Type checking + lint pass: `npm run lint`
+- [x] 2.2 Build passes: `npm run build`
+- [x] 2.3 `src/components/ui/alert-dialog.tsx` present
 
 #### Manual
 
-- [ ] 2.4 Each non-admin row shows Delete; admin row absent
-- [ ] 2.5 Confirming a delete removes the participant after reload
-- [ ] 2.6 Deleted participant absent from `/leaderboard` and revealed history
-- [ ] 2.7 Deleted participant can no longer sign in
-- [ ] 2.8 Cancelling the dialog leaves the participant untouched
-- [ ] 2.9 Action error surfaces a readable message, no raw DB text
+- [x] 2.4 Each non-admin row shows Delete; admin row absent
+- [x] 2.5 Confirming a delete removes the participant after reload
+- [x] 2.6 Deleted participant absent from `/leaderboard` and revealed history
+- [x] 2.7 Deleted participant can no longer sign in
+- [x] 2.8 Cancelling the dialog leaves the participant untouched
+- [x] 2.9 Action error surfaces a readable message, no raw DB text
 
 ### Phase 3: Tests
 
