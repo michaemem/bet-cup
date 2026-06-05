@@ -132,7 +132,7 @@ export async function loadHistory(
   const { data: matches, error: matchesError } = await supabase
     .from("matches")
     .select("id, home_team, away_team, kickoff_time");
-  if (matchesError) throw new Error("history: failed to load matches");
+  if (matchesError) throw new Error("history: failed to load matches", { cause: matchesError });
 
   // Only the target's predictions: pre-kickoff picks of OTHER participants are
   // excluded by the predictions_select RLS policy; the eq() narrows to the one
@@ -141,18 +141,18 @@ export async function loadHistory(
     .from("predictions")
     .select("match_id, home_goals, away_goals")
     .eq("predictor_id", targetUserId);
-  if (predictionsError) throw new Error("history: failed to load predictions");
+  if (predictionsError) throw new Error("history: failed to load predictions", { cause: predictionsError });
 
   const { data: results, error: resultsError } = await supabase
     .from("match_results")
     .select("match_id, home_score, away_score");
-  if (resultsError) throw new Error("history: failed to load match_results");
+  if (resultsError) throw new Error("history: failed to load match_results", { cause: resultsError });
 
   const { data: scores, error: scoresError } = await supabase
     .from("prediction_scores")
     .select("match_id, points")
     .eq("predictor_id", targetUserId);
-  if (scoresError) throw new Error("history: failed to load prediction_scores");
+  if (scoresError) throw new Error("history: failed to load prediction_scores", { cause: scoresError });
 
   const scoreInputs: HistoryScoreInput[] = [];
   for (const score of scores) {

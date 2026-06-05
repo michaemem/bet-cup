@@ -222,7 +222,7 @@ Migrated to [`michaemem/bet-cup`](https://github.com/michaemem/bet-cup) GitHub I
 | S-02 | `tournament-and-matches` | [#3](https://github.com/michaemem/bet-cup/issues/3) | Admin creates tournament and adds matches (one-by-one + bulk paste) |
 | S-03 | `prediction-with-blindness` | [#4](https://github.com/michaemem/bet-cup/issues/4) | Participant submits and edits predictions before kickoff (with blindness invariant) |
 | S-04 | `results-scoring-leaderboard` | [#5](https://github.com/michaemem/bet-cup/issues/5) | Admin enters results; scoring computes; leaderboard updates (north star) |
-| S-05 | `participant-match-history` | [#6](https://github.com/michaemem/bet-cup/issues/6) | Participant views their match-by-match history |
+| S-05 | `participant-match-history` | [#6](https://github.com/michaemem/bet-cup/issues/6) | Participant views their own and any participant's revealed match-by-match history |
 | S-06 | `delete-participant` | [#7](https://github.com/michaemem/bet-cup/issues/7) | Admin deletes a participant; predictions and points are removed |
 | S-07 | `participant-changes-password` | [#8](https://github.com/michaemem/bet-cup/issues/8) | Participant changes their own password |
 

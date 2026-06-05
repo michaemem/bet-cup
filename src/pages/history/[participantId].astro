@@ -17,9 +17,9 @@ if (userId && participantId === userId) {
   return Astro.redirect("/history");
 }
 
-// profiles_public.id is a uuid column; a non-UUID path (e.g. /history/abc) makes
-// Postgres raise 22P02 (surfaces as `error`, not `data: null`). Short-circuit the
-// obvious malformed case, then treat null-OR-error from the lookup as not-found.
+// profiles_public.id is a uuid column; a non-UUID path (e.g. /history/abc) would
+// make Postgres raise 22P02, so short-circuit the obvious malformed case up front.
+// After that guard, a missing row → not-found (404); a genuine lookup error → 500.
 const UUID_RE = /^[0-9a-f-]{36}$/i;
 
 let notFound = false;
@@ -36,7 +36,12 @@ if (supabase && userId) {
       .eq("id", participantId)
       .maybeSingle();
 
-    if (profileError || !profile) {
+    if (profileError) {
+      console.error("history: failed to load profile", profileError);
+      return new Response("Failed to load profile", { status: 500 });
+    }
+
+    if (!profile) {
       notFound = true;
     } else {
       displayName = profile.display_name ?? "—";
