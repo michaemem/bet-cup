@@ -219,29 +219,29 @@ None — no schema or data migrations. The only dependency change is a test-only
 
 #### Automated
 
-- [x] 1.1 Linting passes: `npm run lint`
-- [x] 1.2 Type/astro check passes: `npm run build`
-- [x] 1.3 DB suite passes against a live local stack: `npm test -- results-scoring.rls`
-- [x] 1.4 Suite still self-skips in the default lane (`npm test`)
-- [x] 1.5 Recompute (G1), grid-boundary (G3), and case-tie (G2/G4) tests present and green; existing assertions unchanged
-- [x] 1.6 `pg` connection closed (no Vitest open-handle warning)
-- [x] 1.7 DB test file runs under the Vitest `node` environment (`// @vitest-environment node` docblock present)
+- [x] 1.1 Linting passes: `npm run lint` — b567669
+- [x] 1.2 Type/astro check passes: `npm run build` — b567669
+- [x] 1.3 DB suite passes against a live local stack: `npm test -- results-scoring.rls` — b567669
+- [x] 1.4 Suite still self-skips in the default lane (`npm test`) — b567669
+- [x] 1.5 Recompute (G1), grid-boundary (G3), and case-tie (G2/G4) tests present and green; existing assertions unchanged — b567669
+- [x] 1.6 `pg` connection closed (no Vitest open-handle warning) — b567669
+- [x] 1.7 DB test file runs under the Vitest `node` environment (`// @vitest-environment node` docblock present) — b567669
 
 #### Manual
 
-- [x] 1.8 Mutation check: breaking `score_prediction` fails the grid + recompute tests
-- [x] 1.9 Mutation check: raw `display_name` ORDER BY fails the case-tie test
-- [x] 1.10 CI `rls` job runs the extended file
+- [x] 1.8 Mutation check: breaking `score_prediction` fails the grid + recompute tests — b567669
+- [x] 1.9 Mutation check: raw `display_name` ORDER BY fails the case-tie test — b567669
+- [x] 1.10 CI `rls` job runs the extended file — b567669
 
 ### Phase 2: Result input validation unit test
 
 #### Automated
 
-- [ ] 2.1 Linting passes: `npm run lint`
-- [ ] 2.2 Type/astro check passes: `npm run build`
-- [ ] 2.3 Default test lane runs `result.test.ts` green (`npm test`)
-- [ ] 2.4 File requires no DB / not gated by `dbConfigured`
+- [x] 2.1 Linting passes: `npm run lint`
+- [x] 2.2 Type/astro check passes: `npm run build`
+- [x] 2.3 Default test lane runs `result.test.ts` green (`npm test`)
+- [x] 2.4 File requires no DB / not gated by `dbConfigured`
 
 #### Manual
 
-- [ ] 2.5 Review rejected/accepted cases match FR-009 intent
+- [x] 2.5 Review rejected/accepted cases match FR-009 intent
