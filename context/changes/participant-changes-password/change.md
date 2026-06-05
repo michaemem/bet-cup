@@ -1,7 +1,7 @@
 ---
 change_id: participant-changes-password
 title: Participant changes password
-status: plan_reviewed
+status: implementing
 created: 2026-06-05
 updated: 2026-06-05
 archived_at: null

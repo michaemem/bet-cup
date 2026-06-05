@@ -272,16 +272,16 @@ None. No schema or RLS changes; existing `profiles_update` policy and `auth.user
 
 #### Automated
 
-- [ ] 1.1 Type checking passes: `npm run lint`
-- [ ] 1.2 Schema unit tests pass: `npx vitest run src/lib/schemas/account.test.ts`
-- [ ] 1.3 Action integration tests pass: `npx vitest run src/actions/account.test.ts`
-- [ ] 1.4 Production build succeeds: `npm run build`
+- [x] 1.1 Type checking passes: `npm run lint`
+- [x] 1.2 Schema unit tests pass: `npx vitest run src/lib/schemas/account.test.ts`
+- [x] 1.3 Action integration tests pass: `npx vitest run src/actions/account.test.ts`
+- [x] 1.4 Production build succeeds: `npm run build`
 
 #### Manual
 
-- [ ] 1.5 Wrong current password returns a field error and does not change the password
+- [x] 1.5 Wrong current password returns a field error and does not change the password
 - [ ] 1.6 After password change, old password fails and another device's session is invalidated
-- [ ] 1.7 Display-name update changes only `display_name` (not `username`/`legal_name`)
+- [x] 1.7 Display-name update changes only `display_name` (not `username`/`legal_name`)
 
 ### Phase 2: Settings UI
 

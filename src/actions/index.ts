@@ -1,7 +1,9 @@
-import type { SupabaseClient, User } from "@supabase/supabase-js";
+import { createClient as createSupabaseClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 import type { AstroCookies } from "astro";
 import { ActionError, defineAction } from "astro:actions";
+import { SUPABASE_KEY, SUPABASE_URL } from "astro:env/server";
 import type { Database } from "@/db/database.types";
+import { changeDisplayNameSchema, changePasswordSchema } from "@/lib/schemas/account";
 import { generatePassword } from "@/lib/password";
 import { matchBulkSchema, matchInputSchema, matchUpdateSchema } from "@/lib/schemas/match";
 import { participantCreateSchema } from "@/lib/schemas/participant";
@@ -98,6 +100,41 @@ function sessionClient(context: ActionContext): { supabase: SupabaseClient<Datab
   return { supabase, user };
 }
 
+/**
+ * Verify the caller's CURRENT password without touching their live session.
+ *
+ * Builds a throwaway `@supabase/supabase-js` client (anon key, `persistSession:
+ * false`) — deliberately NOT the SSR session client — and calls
+ * `signInWithPassword`. Verifying off-session means the caller's cookies are
+ * never rotated, so a later `signOut({ scope: "others" })` targets only
+ * genuinely-other devices and the "keep the current device signed in" guarantee
+ * no longer depends on action `Set-Cookie` propagation. The short-lived session
+ * minted here is reaped by that same `signOut(others)` (password flow) or simply
+ * expires (display-name flow).
+ *
+ * Error discipline: an invalid-credentials failure (wrong current password —
+ * GoTrue `invalid_credentials` / HTTP 400) surfaces as a field error on
+ * `currentPassword`; ANY other failure (rate limit / 429, network, misconfig) is
+ * logged and surfaced via `internalError`, never collapsed into "Current
+ * password is incorrect." (which would mislead the user and mask the real
+ * fault). Never echo the raw GoTrue message or leak the synthetic-email scheme.
+ */
+async function verifyCurrentPassword(email: string, password: string): Promise<void> {
+  if (!SUPABASE_URL || !SUPABASE_KEY) {
+    throw new ActionError({ code: "INTERNAL_SERVER_ERROR", message: NOT_CONFIGURED });
+  }
+  const verifier = createSupabaseClient<Database>(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  });
+  const { error } = await verifier.auth.signInWithPassword({ email, password });
+  if (error) {
+    if (error.code === "invalid_credentials" || error.status === 400) {
+      throw inputError("currentPassword", "Current password is incorrect.");
+    }
+    throw internalError(error);
+  }
+}
+
 /** Resolve the single tournament (id + zone), or refuse if none exists yet. */
 async function requireTournament(supabase: SupabaseClient<Database>): Promise<{ id: string; time_zone: string }> {
   const { data, error } = await supabase.from("tournaments").select("id, time_zone").limit(1).maybeSingle();
@@ -163,6 +200,53 @@ export const server = {
         }
 
         return { username: input.username, password };
+      },
+    }),
+  },
+  account: {
+    /**
+     * Change the caller's own display name (FR-023). Role-agnostic — runs on the
+     * SESSION client under RLS (`profiles_update`: `auth.uid() = id`), so no
+     * admin/service-role client is involved. Requires the current password,
+     * verified off-session first. The payload sends ONLY `display_name`: the
+     * `profiles_update` policy is column-agnostic, so an over-broad payload could
+     * silently mutate `username`/`legal_name`.
+     */
+    changeDisplayName: defineAction({
+      accept: "json",
+      input: changeDisplayNameSchema,
+      handler: async (input, context) => {
+        const { supabase, user } = sessionClient(context);
+        if (!user.email) throw internalError(new Error("signed-in user has no email"));
+        await verifyCurrentPassword(user.email, input.currentPassword);
+        const { error } = await supabase.from("profiles").update({ display_name: input.displayName }).eq("id", user.id);
+        if (error) throw internalError(error);
+        return { ok: true };
+      },
+    }),
+    /**
+     * Change the caller's own password (FR-003). Role-agnostic. Call ordering is
+     * load-bearing: (1) verify the current password off-session, (2)
+     * `updateUser({ password })` on the session client, (3) `signOut({ scope:
+     * "others" })` to invalidate every OTHER device's refresh token while keeping
+     * the acting device signed in (and reaping the transient verify session).
+     * Never `signOut` before `updateUser` (it would revoke against the old
+     * password state) and never the default global scope (it would log the actor
+     * out mid-flow). The `signOut(others)` failure is logged-and-continued: the
+     * password change already succeeded.
+     */
+    changePassword: defineAction({
+      accept: "json",
+      input: changePasswordSchema,
+      handler: async (input, context) => {
+        const { supabase, user } = sessionClient(context);
+        if (!user.email) throw internalError(new Error("signed-in user has no email"));
+        await verifyCurrentPassword(user.email, input.currentPassword);
+        const { error: updateError } = await supabase.auth.updateUser({ password: input.newPassword });
+        if (updateError) throw internalError(updateError);
+        const { error: signOutError } = await supabase.auth.signOut({ scope: "others" });
+        if (signOutError) console.error("action signOut(others) error", signOutError);
+        return { ok: true };
       },
     }),
   },
