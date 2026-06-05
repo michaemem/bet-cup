@@ -266,27 +266,27 @@ None. No schema, RLS, or view changes — the cascade FKs and live views from F-
 
 #### Automated
 
-- [x] 2.1 Type checking + lint pass: `npm run lint`
-- [x] 2.2 Build passes: `npm run build`
-- [x] 2.3 `src/components/ui/alert-dialog.tsx` present
+- [x] 2.1 Type checking + lint pass: `npm run lint` — 01ea64b
+- [x] 2.2 Build passes: `npm run build` — 01ea64b
+- [x] 2.3 `src/components/ui/alert-dialog.tsx` present — 01ea64b
 
 #### Manual
 
-- [x] 2.4 Each non-admin row shows Delete; admin row absent
-- [x] 2.5 Confirming a delete removes the participant after reload
-- [x] 2.6 Deleted participant absent from `/leaderboard` and revealed history
-- [x] 2.7 Deleted participant can no longer sign in
-- [x] 2.8 Cancelling the dialog leaves the participant untouched
-- [x] 2.9 Action error surfaces a readable message, no raw DB text
+- [x] 2.4 Each non-admin row shows Delete; admin row absent — 01ea64b
+- [x] 2.5 Confirming a delete removes the participant after reload — 01ea64b
+- [x] 2.6 Deleted participant absent from `/leaderboard` and revealed history — 01ea64b
+- [x] 2.7 Deleted participant can no longer sign in — 01ea64b
+- [x] 2.8 Cancelling the dialog leaves the participant untouched — 01ea64b
+- [x] 2.9 Action error surfaces a readable message, no raw DB text — 01ea64b
 
 ### Phase 3: Tests
 
 #### Automated
 
-- [ ] 3.1 Default gate green without a DB: `npm test` (live lane self-skips, guard runs)
-- [ ] 3.2 Lint passes: `npm run lint`
-- [ ] 3.3 Live lane passes with a local stack: `… npm test -- participants`
+- [x] 3.1 Default gate green without a DB: `npm test` (live lane self-skips, guard runs)
+- [x] 3.2 Lint passes: `npm run lint`
+- [x] 3.3 Live lane passes with a local stack: `… npm test -- participants`
 
 #### Manual
 
-- [ ] 3.4 Live lane against local Supabase shows cascade + FORBIDDEN + idempotency passing
+- [x] 3.4 Live lane against local Supabase shows cascade + FORBIDDEN + idempotency passing
