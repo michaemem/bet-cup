@@ -304,29 +304,29 @@ Single forward-only migration; no data backfill (no prior results exist). `match
 
 #### Automated
 
-- [x] 1.1 Migration applies cleanly: `npm run db:reset`
-- [x] 1.2 DB types regenerate without drift beyond new objects: `npm run db:types`
-- [x] 1.3 Type checking passes: `npm run lint`
-- [x] 1.4 Linting passes: `npm run lint`
-- [x] 1.5 DB/RLS suite passes locally with Supabase up: `npm test -- rls`
+- [x] 1.1 Migration applies cleanly: `npm run db:reset` — a7029fc
+- [x] 1.2 DB types regenerate without drift beyond new objects: `npm run db:types` — a7029fc
+- [x] 1.3 Type checking passes: `npm run lint` — a7029fc
+- [x] 1.4 Linting passes: `npm run lint` — a7029fc
+- [x] 1.5 DB/RLS suite passes locally with Supabase up: `npm test -- rls` — a7029fc
 
 #### Manual
 
-- [x] 1.6 Local DB shows `match_results`, `score_prediction`, `prediction_scores`, `leaderboard` with expected grants
-- [x] 1.7 `select * from leaderboard` returns all profiles with sensible totals after a manual result insert
+- [x] 1.6 Local DB shows `match_results`, `score_prediction`, `prediction_scores`, `leaderboard` with expected grants — a7029fc
+- [x] 1.7 `select * from leaderboard` returns all profiles with sensible totals after a manual result insert — a7029fc
 
 ### Phase 2: Result-entry backend (Action)
 
 #### Automated
 
-- [ ] 2.1 Type checking passes: `npm run lint`
-- [ ] 2.2 Linting passes: `npm run lint`
-- [ ] 2.3 Existing Action tests still pass: `npm test`
-- [ ] 2.4 Admin-guard test passes (if added): `npm test`
+- [x] 2.1 Type checking passes: `npm run lint`
+- [x] 2.2 Linting passes: `npm run lint`
+- [x] 2.3 Existing Action tests still pass: `npm test`
+- [x] 2.4 Admin-guard test passes (if added): `npm test`
 
 #### Manual
 
-- [ ] 2.5 Participant call to `actions.results.upsert` rejected `UNAUTHORIZED` before any DB call
+- [x] 2.5 Participant call to `actions.results.upsert` rejected `UNAUTHORIZED` before any DB call
 - [ ] 2.6 Upsert on a future-kickoff match returns the friendly "not kicked off" error
 - [ ] 2.7 Re-upsert updates the single `match_results` row
 

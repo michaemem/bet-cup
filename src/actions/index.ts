@@ -6,6 +6,7 @@ import { generatePassword } from "@/lib/password";
 import { matchBulkSchema, matchInputSchema, matchUpdateSchema } from "@/lib/schemas/match";
 import { participantCreateSchema } from "@/lib/schemas/participant";
 import { predictionUpsertSchema } from "@/lib/schemas/prediction";
+import { resultUpsertSchema } from "@/lib/schemas/result";
 import { tournamentSchema } from "@/lib/schemas/tournament";
 import { createClient } from "@/lib/supabase";
 import { createAdminAuthClient } from "@/lib/supabase-admin";
@@ -24,6 +25,7 @@ import { synthEmail } from "@/lib/username";
 const NOT_CONFIGURED = "Supabase is not configured";
 const KICKED_OFF = "This match has already kicked off and can no longer be edited.";
 const PREDICTION_LOCKED = "This match has already kicked off — predictions are locked.";
+const RESULT_NOT_KICKED_OFF = "This match hasn't kicked off yet — you can enter a result once it starts.";
 const GENERIC_DB_ERROR = "Something went wrong. Please try again.";
 
 /**
@@ -324,6 +326,61 @@ export const server = {
         // The predictions INSERT/UPDATE policies filter a post-kickoff write to
         // zero rows with no error (race-proof lock). Treat that as the lock.
         if (data.length === 0) throw new ActionError({ code: "FORBIDDEN", message: PREDICTION_LOCKED });
+        return data[0];
+      },
+    }),
+  },
+  results: {
+    /**
+     * Admin enters or corrects a match result (FR-009/FR-010). The kickoff guard
+     * here is the MIRROR of the matches/predictions locks: a result may only be
+     * written AFTER kickoff (you cannot score an unplayed match). Defense-in-depth
+     * matches `matches.update`: an app-layer pre-check for a friendly message plus
+     * the race-proof RLS guard. The `match_results` INSERT/UPDATE policies require
+     * `is_admin() AND match_is_kicked_off(match_id)`, so an upsert cannot create a
+     * pre-kickoff result via either path. Runs on the admin SSR client under RLS —
+     * never the service-role client. Correction is an upsert on the unique
+     * `match_id`, so scoring/leaderboard recompute for free on next read.
+     */
+    upsert: defineAction({
+      accept: "json",
+      input: resultUpsertSchema,
+      handler: async (input, context) => {
+        const supabase = adminClient(context);
+
+        // App-layer pre-check: a friendlier/earlier message than the silent RLS
+        // zero-row result below (which remains the race-proof guard). Distinguish
+        // "no such match" from the kickoff guard so a stale/bad id doesn't
+        // masquerade as "not kicked off yet".
+        const { data: match, error: matchError } = await supabase
+          .from("matches")
+          .select("kickoff_time")
+          .eq("id", input.matchId)
+          .maybeSingle();
+        if (matchError) throw internalError(matchError);
+        if (!match) {
+          throw new ActionError({ code: "NOT_FOUND", message: "Match not found." });
+        }
+        if (new Date(match.kickoff_time).getTime() > Date.now()) {
+          throw new ActionError({ code: "FORBIDDEN", message: RESULT_NOT_KICKED_OFF });
+        }
+
+        const { data, error } = await supabase
+          .from("match_results")
+          .upsert(
+            {
+              match_id: input.matchId,
+              home_score: input.homeScore,
+              away_score: input.awayScore,
+            },
+            { onConflict: "match_id" },
+          )
+          .select("id");
+        if (error) throw internalError(error);
+
+        // The match_results INSERT/UPDATE policies filter a not-kicked-off (or
+        // non-admin) write to zero rows with no error. Treat that as the guard.
+        if (data.length === 0) throw new ActionError({ code: "FORBIDDEN", message: RESULT_NOT_KICKED_OFF });
         return data[0];
       },
     }),
