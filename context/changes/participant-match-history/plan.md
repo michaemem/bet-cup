@@ -279,27 +279,27 @@ None — no schema change. Pure read feature over S-04's objects.
 
 #### Automated
 
-- [x] 1.1 Lint passes (docs-only guard): `npm run lint`
+- [x] 1.1 Lint passes (docs-only guard): `npm run lint` — 4f23dda
 
 #### Manual
 
-- [x] 1.2 `prd.md` contains FR-021b; FR-021 unchanged
-- [x] 1.3 `roadmap.md` S-05 row and section mention FR-021b and the refined listing rule
+- [x] 1.2 `prd.md` contains FR-021b; FR-021 unchanged — 4f23dda
+- [x] 1.3 `roadmap.md` S-05 row and section mention FR-021b and the refined listing rule — 4f23dda
 
 ### Phase 2: Own history page (`/history`)
 
 #### Automated
 
-- [ ] 2.1 Type checking passes: `npm run lint`
-- [ ] 2.2 Linting passes: `npm run lint`
-- [ ] 2.3 Production build passes: `npm run build`
+- [x] 2.1 Type checking passes: `npm run lint`
+- [x] 2.2 Linting passes: `npm run lint`
+- [x] 2.3 Production build passes: `npm run build`
 
 #### Manual
 
-- [ ] 2.4 `/history` shows predicted matches; predicted-but-unresulted shows prediction only
-- [ ] 2.5 Resulted match shows prediction + result + points; running total equals leaderboard total
-- [ ] 2.6 Future unpredicted match does not appear
-- [ ] 2.7 Dashboard "My history" link works; unauthenticated access redirects to sign-in
+- [x] 2.4 `/history` shows predicted matches; predicted-but-unresulted shows prediction only
+- [x] 2.5 Resulted match shows prediction + result + points; running total equals leaderboard total
+- [x] 2.6 Future unpredicted match does not appear
+- [x] 2.7 Dashboard "My history" link works; unauthenticated access redirects to sign-in
 
 ### Phase 3: Cross-participant drill-in (`/history/[participantId]`)
 
