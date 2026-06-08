@@ -326,15 +326,15 @@ None — no data or schema changes. Rollback is a code revert (`npx wrangler rol
 
 #### Automated
 
-- [x] 3.1 Linting passes: `npm run lint`
-- [x] 3.2 Unit tests pass: `npm run test`
-- [x] 3.3 Production build succeeds: `npm run build`
+- [x] 3.1 Linting passes: `npm run lint` — b5cc051
+- [x] 3.2 Unit tests pass: `npm run test` — b5cc051
+- [x] 3.3 Production build succeeds: `npm run build` — b5cc051
 
 #### Manual
 
-- [x] 3.4 `/predictions`, `/admin`, `/admin/participants`, `/settings` have no overflow at 360px; bulk-paste + kickoff rows stack
-- [x] 3.5 Lock cue / status badge stays with its match when the header stacks; open vs locked states correct
-- [x] 3.6 Submit buttons and password toggle are comfortably tappable
-- [x] 3.7 Secondary actions (MatchList Edit/Cancel, participant Delete) meet ≥44px bar; Calendar cells the documented exception
-- [x] 3.8 Desktop (≥640px) form layouts unchanged
-- [x] 3.9 Full manual checklist (Testing Strategy) walked across all 9 routes at 360px
+- [x] 3.4 `/predictions`, `/admin`, `/admin/participants`, `/settings` have no overflow at 360px; bulk-paste + kickoff rows stack — b5cc051
+- [x] 3.5 Lock cue / status badge stays with its match when the header stacks; open vs locked states correct — b5cc051
+- [x] 3.6 Submit buttons and password toggle are comfortably tappable — b5cc051
+- [x] 3.7 Secondary actions (MatchList Edit/Cancel, participant Delete) meet ≥44px bar; Calendar cells the documented exception — b5cc051
+- [x] 3.8 Desktop (≥640px) form layouts unchanged — b5cc051
+- [x] 3.9 Full manual checklist (Testing Strategy) walked across all 9 routes at 360px — b5cc051
