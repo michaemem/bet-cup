@@ -222,12 +222,12 @@ None — no schema or production-code changes.
 
 #### Automated
 
-- [x] 2.1 Lint passes: `npm run lint`
-- [x] 2.2 Static isolation guard passes with NO DB env (`npm test -- predictions.rls`; RLS describe skips, static describe green)
-- [x] 2.3 Guard fails when a second importer is introduced (verify then revert)
-- [x] 2.4 Full suite green with DB up: `npm test -- rls` (adapted: predictions.rls 18/18 green; results-scoring.rls has a pre-existing supabase-js 2.105.3 node-env WebSocket failure, unrelated to this change — tracked in test-plan §6.6)
+- [x] 2.1 Lint passes: `npm run lint` — fa08928
+- [x] 2.2 Static isolation guard passes with NO DB env (`npm test -- predictions.rls`; RLS describe skips, static describe green) — fa08928
+- [x] 2.3 Guard fails when a second importer is introduced (verify then revert) — fa08928
+- [x] 2.4 Full suite green with DB up: `npm test -- rls` (adapted: predictions.rls 18/18 green; results-scoring.rls has a pre-existing supabase-js 2.105.3 node-env WebSocket failure, unrelated to this change — tracked in test-plan §6.6) — fa08928
 
 #### Manual
 
-- [x] 2.5 §6.2 / §6.6 of test-plan.md readable as a standalone cookbook entry; Phase 2 status → complete
-- [x] 2.6 Importer/reader intuition matches the guard (only supabase-admin.ts reads key, only actions/index.ts imports it)
+- [x] 2.5 §6.2 / §6.6 of test-plan.md readable as a standalone cookbook entry; Phase 2 status → complete — fa08928
+- [x] 2.6 Importer/reader intuition matches the guard (only supabase-admin.ts reads key, only actions/index.ts imports it) — fa08928
