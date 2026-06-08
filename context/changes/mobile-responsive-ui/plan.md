@@ -297,15 +297,15 @@ None — no data or schema changes. Rollback is a code revert (`npx wrangler rol
 
 #### Automated
 
-- [ ] 1.1 Linting passes: `npm run lint`
-- [ ] 1.2 Unit tests pass: `npm run test`
-- [ ] 1.3 Production build succeeds: `npm run build`
+- [x] 1.1 Linting passes: `npm run lint`
+- [x] 1.2 Unit tests pass: `npm run test`
+- [x] 1.3 Production build succeeds: `npm run build`
 
 #### Manual
 
-- [ ] 1.4 `/dashboard` nav stacks full-width on mobile; horizontal row at ≥640px; no overflow
-- [ ] 1.5 `/auth/signin` card fits 360px with comfortable padding
-- [ ] 1.6 All shell-B pages have comfortable mobile padding; unchanged at desktop width
+- [x] 1.4 `/dashboard` nav stacks full-width on mobile; horizontal row at ≥640px; no overflow
+- [x] 1.5 `/auth/signin` card fits 360px with comfortable padding
+- [x] 1.6 All shell-B pages have comfortable mobile padding; unchanged at desktop width
 
 ### Phase 2: Tables → responsive cards
 
