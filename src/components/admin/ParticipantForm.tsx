@@ -68,16 +68,16 @@ export function ParticipantForm() {
           Participant created. Share these credentials now — the password is shown only once.
         </p>
         <dl className="space-y-2 font-mono text-sm">
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <dt className="text-muted-foreground w-20">Username</dt>
             <dd className="font-semibold">{credentials.username}</dd>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <dt className="text-muted-foreground w-20">Password</dt>
             <dd className="font-semibold">{credentials.password}</dd>
           </div>
         </dl>
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <Button type="button" variant="outline" onClick={handleCopy}>
             {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
             {copied ? "Copied" : "Copy"}

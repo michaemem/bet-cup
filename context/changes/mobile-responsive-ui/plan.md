@@ -311,30 +311,30 @@ None — no data or schema changes. Rollback is a code revert (`npx wrangler rol
 
 #### Automated
 
-- [x] 2.1 Linting passes: `npm run lint`
-- [x] 2.2 Unit tests pass: `npm run test`
-- [x] 2.3 Production build succeeds: `npm run build`
+- [x] 2.1 Linting passes: `npm run lint` — 392df29
+- [x] 2.2 Unit tests pass: `npm run test` — 392df29
+- [x] 2.3 Production build succeeds: `npm run build` — 392df29
 
 #### Manual
 
-- [x] 2.4 All 4 tables render as labeled cards at 360px with no overflow; values unambiguous
-- [x] 2.5 All 4 tables render exactly as before at ≥640px (columns, alignment, totals, links)
-- [x] 2.6 Leaderboard mobile card name link navigates to the correct history page
-- [x] 2.7 Others' history still shows only revealed predictions
+- [x] 2.4 All 4 tables render as labeled cards at 360px with no overflow; values unambiguous — 392df29
+- [x] 2.5 All 4 tables render exactly as before at ≥640px (columns, alignment, totals, links) — 392df29
+- [x] 2.6 Leaderboard mobile card name link navigates to the correct history page — 392df29
+- [x] 2.7 Others' history still shows only revealed predictions — 392df29
 
 ### Phase 3: Forms & interactive controls
 
 #### Automated
 
-- [ ] 3.1 Linting passes: `npm run lint`
-- [ ] 3.2 Unit tests pass: `npm run test`
-- [ ] 3.3 Production build succeeds: `npm run build`
+- [x] 3.1 Linting passes: `npm run lint`
+- [x] 3.2 Unit tests pass: `npm run test`
+- [x] 3.3 Production build succeeds: `npm run build`
 
 #### Manual
 
-- [ ] 3.4 `/predictions`, `/admin`, `/admin/participants`, `/settings` have no overflow at 360px; bulk-paste + kickoff rows stack
-- [ ] 3.5 Lock cue / status badge stays with its match when the header stacks; open vs locked states correct
-- [ ] 3.6 Submit buttons and password toggle are comfortably tappable
-- [ ] 3.7 Secondary actions (MatchList Edit/Cancel, participant Delete) meet ≥44px bar; Calendar cells the documented exception
-- [ ] 3.8 Desktop (≥640px) form layouts unchanged
-- [ ] 3.9 Full manual checklist (Testing Strategy) walked across all 9 routes at 360px
+- [x] 3.4 `/predictions`, `/admin`, `/admin/participants`, `/settings` have no overflow at 360px; bulk-paste + kickoff rows stack
+- [x] 3.5 Lock cue / status badge stays with its match when the header stacks; open vs locked states correct
+- [x] 3.6 Submit buttons and password toggle are comfortably tappable
+- [x] 3.7 Secondary actions (MatchList Edit/Cancel, participant Delete) meet ≥44px bar; Calendar cells the documented exception
+- [x] 3.8 Desktop (≥640px) form layouts unchanged
+- [x] 3.9 Full manual checklist (Testing Strategy) walked across all 9 routes at 360px

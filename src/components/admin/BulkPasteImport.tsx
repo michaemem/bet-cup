@@ -100,7 +100,7 @@ export function BulkPasteImport({ timeZone }: Props) {
               <li key={index} className="flex flex-wrap items-center gap-2 rounded-md border p-2">
                 <Input
                   aria-label={`Home team, row ${String(index + 1)}`}
-                  className="w-36"
+                  className="w-full sm:w-36"
                   value={row.homeTeam}
                   onChange={(event) => {
                     updateField(index, "homeTeam", event.target.value);
@@ -108,7 +108,7 @@ export function BulkPasteImport({ timeZone }: Props) {
                 />
                 <Input
                   aria-label={`Away team, row ${String(index + 1)}`}
-                  className="w-36"
+                  className="w-full sm:w-36"
                   value={row.awayTeam}
                   onChange={(event) => {
                     updateField(index, "awayTeam", event.target.value);
@@ -116,7 +116,7 @@ export function BulkPasteImport({ timeZone }: Props) {
                 />
                 <Input
                   aria-label={`Kickoff, row ${String(index + 1)}`}
-                  className="w-44"
+                  className="w-full sm:w-44"
                   value={row.kickoffLocal}
                   onChange={(event) => {
                     updateField(index, "kickoffLocal", event.target.value);
