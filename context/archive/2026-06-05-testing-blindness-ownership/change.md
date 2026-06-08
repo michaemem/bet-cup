@@ -1,10 +1,10 @@
 ---
 change_id: testing-blindness-ownership
 title: Blindness & ownership at the DB boundary (test rollout Phase 2)
-status: implemented
+status: archived
 created: 2026-06-05
 updated: 2026-06-08
-archived_at: null
+archived_at: 2026-06-08T07:35:49Z
 ---
 
 ## Notes
