@@ -84,6 +84,8 @@ Existing tournament-prediction apps (Kicktipp, Superbru, sweepstakes spreadsheet
   > Decision (2026-05-28, roadmap Q-02 / #10): cascade-delete chosen over soft-delete — the PRD wording reads as a hard delete, the MVP is single-tournament so an audit trail has no consumer, and a forgotten "inactive" filter in a future query would be a silent leaderboard bug.
 - FR-005: Unauthenticated visitor is redirected to the login page from any other route. Priority: must-have
 - FR-023: User (participant or admin) can change their own display name — the name shown on the leaderboard and in other participants' revealed history. Changing it requires confirming the current password; display names need not be unique. Priority: must-have
+- FR-024: Admin can reset any participant's password from the manage-participants view; the system generates a new temporary password that the admin shares with the participant out-of-band, the reset signs the participant out of their other sessions, and the participant can subsequently change it themselves (FR-003). Priority: must-have
+  > Decision (2026-06-08, roadmap S-09 `admin-reset-participant-password`): the admin does not type the new password — the system generates a random temporary one (copied and shared out-of-band, like the FR-002 initial password); the reset revokes the participant's existing sessions; there is no forced change-on-next-login (the participant self-rotates via FR-003). An email-based reset link was rejected because it conflicts with the "Notifications of any kind" Non-Goal. The reset must run on the auth-only service-role surface and never read predictions (FR-015 blast-radius guard).
 
 ### Tournament & Match Management
 
@@ -116,6 +118,11 @@ Existing tournament-prediction apps (Kicktipp, Superbru, sweepstakes spreadsheet
   > Decision (2026-05-28, roadmap Q-01 / #9): primary tie-break is the count of exact-score (3-point) predictions, with alphabetical-by-name as the final deterministic fallback. Chosen over a plain alphabetical default because it rewards prediction precision while staying cheap and deterministic.
 - FR-021: Participant can view their own match-by-match history: each of their predictions, the actual result (when entered), and points earned. Priority: must-have
 - FR-021b: Participant can view any other participant's match-by-match history for matches whose scheduled kickoff has passed — that participant's revealed prediction, the actual result (when entered), and points earned. Pre-kickoff predictions remain hidden per FR-015. A match appears in a history view when the viewed participant has a prediction for it or a result has been entered. Priority: must-have
+
+### Presentation & Devices
+
+- FR-025: Every page — authentication, dashboard, predictions, leaderboard, participant history, settings, and the admin tournament/match and manage-participants views — renders usably on a mobile-phone browser: no horizontal overflow, tap-friendly form controls, and leaderboard/history tables that reflow or scroll within their container. The desktop layout and all behavior remain unchanged. Priority: must-have
+  > Decision (2026-06-08, roadmap S-08 `mobile-responsive-ui`): scoped to responsive presentation only — no behavior or data changes, no new UI dependencies (Tailwind-only) — and the FR-015 blindness / FR-014 kickoff-lock cues must stay unambiguous in compact layouts (a layout that surfaced a pre-kickoff prediction would be a real regression, not a cosmetic one). This promotes the existing "usable on mobile browsers" expectation (see Non-Goals: native mobile app) into an explicit, testable requirement.
 
 > Socratic: targeted challenge run on FR-007, FR-013, FR-015, FR-017 (the FRs flagged as most likely to be contested). See blockquotes under each. The remaining FRs (FR-001..FR-006, FR-008..FR-012, FR-014, FR-016, FR-018..FR-021) were not individually challenged; if any becomes contested during `/10x-frame` or `/10x-plan`, run a per-FR Socratic round at that point.
 
@@ -150,7 +157,7 @@ Two roles: **admin** and **participant**.
 - **Configurable scoring rules.** The scoring rule is hardcoded as 3 / 2 / 1 / 0 (see Business Logic). The admin cannot change it per tournament or per match. — Rationale: configurability adds a domain-modeling burden for zero MVP value.
 - **External sports/fixtures integration.** The admin enters every match and every result by hand. No integration with third-party fixture or result providers. — Rationale: every external integration is a 1-week tax on a 3-week project; manual entry is acceptable for one tournament.
 - **Notifications of any kind.** No email, no push, no SMS, no in-app banners reminding participants to predict. — Rationale: no notification infrastructure to build, deliver, or test.
-- **Native mobile app.** The web app must be usable on mobile browsers, but no iOS/Android native app, no installable home-screen prompt, no mobile-specific UI work. — Rationale: scope discipline.
+- **Native mobile app.** The web app must be usable on mobile browsers (made explicit and testable in FR-025), but no iOS/Android native app, no installable home-screen prompt, no platform-specific native UI. — Rationale: scope discipline. Responsive web layout is in scope (FR-025); a native shell is not.
 - **Real-time updates.** No live leaderboard streaming, no live match-score feed, no real-time push channel. The leaderboard updates the next time a participant loads the page after the admin enters a result. — Rationale: real-time has high implementation cost relative to the rare moments it would be visible.
 
 ## Open Questions
