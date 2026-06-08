@@ -371,3 +371,61 @@ describe.skipIf(!dbConfigured)("predictions RLS — blindness + write-lock (live
     expect(revealed?.[0]).toEqual({ home_goals: 2, away_goals: 1 });
   }, 20000);
 });
+
+/**
+ * #5 — Service-role blast radius (static, NO DB).
+ *
+ * This describe is deliberately NOT skip-gated: it must run in the default
+ * `npm test` / `ci` job (no Supabase), because that is exactly the environment
+ * where catching a new service-role importer matters most. The service-role key
+ * BYPASSES RLS, so the whole blindness/ownership guarantee above collapses if a
+ * second module starts reading the key or chains `.from("predictions")` onto the
+ * admin client.
+ *
+ * Per lessons.md, we assert against PRODUCTION reads / importer count (raw source
+ * under src/, excluding `*.test.*` and `test/`) — never a raw grep across src,
+ * which catches test harnesses that reference the key NAME via `process.env`.
+ */
+describe("service-role isolation (static, no DB)", () => {
+  const rawSources: Record<string, string> = import.meta.glob("/src/**/*.{ts,tsx,astro}", {
+    query: "?raw",
+    import: "default",
+    eager: true,
+  });
+
+  const productionSources = Object.entries(rawSources)
+    .map(([path, source]) => ({ path: path.replace(/^\//, ""), source }))
+    .filter(({ path }) => !/\.test\.[tj]sx?$/.test(path) && !path.includes("/test/"));
+
+  it("has exactly one production reader of SUPABASE_SERVICE_ROLE_KEY via astro:env/server", () => {
+    const readers = productionSources
+      .filter(({ source }) => /from\s+["']astro:env\/server["']/.test(source))
+      .filter(({ source }) => source.includes("SUPABASE_SERVICE_ROLE_KEY"))
+      .map(({ path }) => path)
+      .sort();
+
+    expect(readers).toEqual(["src/lib/supabase-admin.ts"]);
+  });
+
+  it("has exactly one production importer of the service-role client", () => {
+    const importers = productionSources
+      // Exclude the definition module itself — it declares createAdminAuthClient.
+      .filter(({ path }) => path !== "src/lib/supabase-admin.ts")
+      .filter(({ source }) => /@\/lib\/supabase-admin|createAdminAuthClient/.test(source))
+      .map(({ path }) => path)
+      .sort();
+
+    expect(importers).toEqual(["src/actions/index.ts"]);
+  });
+
+  it("never touches a data table on the service-role client (auth-only, no .from())", () => {
+    const adminModule = productionSources.find(({ path }) => path === "src/lib/supabase-admin.ts");
+    expect(adminModule).toBeDefined();
+    const adminSource = adminModule?.source ?? "";
+
+    // The most dangerous regression: reading predictions on the RLS-bypassing client.
+    expect(/\.from\(\s*["']predictions["']\s*\)/.test(adminSource)).toBe(false);
+    // Stronger guard: the module is auth-only, so it touches no data table at all.
+    expect(adminSource.includes(".from(")).toBe(false);
+  });
+});

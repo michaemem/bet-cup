@@ -207,27 +207,27 @@ None — no schema or production-code changes.
 
 #### Automated
 
-- [x] 1.1 Lint passes: `npm run lint`
-- [x] 1.2 Full suite passes with local DB up: `npm test -- predictions.rls` (all four `SUPABASE_*` env vars set)
-- [x] 1.3 #3 INSERT-spoof, cross-owner UPDATE, cross-owner DELETE cases present and green
-- [x] 1.4 #1 unfiltered-list, anon-denial, near-boundary crossing cases present and green
-- [x] 1.5 No regression in existing predictions.rls cases
+- [x] 1.1 Lint passes: `npm run lint` — 802d7e2
+- [x] 1.2 Full suite passes with local DB up: `npm test -- predictions.rls` (all four `SUPABASE_*` env vars set) — 802d7e2
+- [x] 1.3 #3 INSERT-spoof, cross-owner UPDATE, cross-owner DELETE cases present and green — 802d7e2
+- [x] 1.4 #1 unfiltered-list, anon-denial, near-boundary crossing cases present and green — 802d7e2
+- [x] 1.5 No regression in existing predictions.rls cases — 802d7e2
 
 #### Manual
 
-- [x] 1.6 Near-boundary test run 3–5× locally with no intermittent failure
-- [x] 1.7 (Optional) IDOR cases verified to fail for the right reason via temporary policy relaxation
+- [x] 1.6 Near-boundary test run 3–5× locally with no intermittent failure — 802d7e2
+- [x] 1.7 (Optional) IDOR cases verified to fail for the right reason via temporary policy relaxation — 802d7e2
 
 ### Phase 2: Service-role isolation guard (static) + cookbook & ledger
 
 #### Automated
 
-- [ ] 2.1 Lint passes: `npm run lint`
-- [ ] 2.2 Static isolation guard passes with NO DB env (`npm test -- predictions.rls`; RLS describe skips, static describe green)
-- [ ] 2.3 Guard fails when a second importer is introduced (verify then revert)
-- [ ] 2.4 Full suite green with DB up: `npm test -- rls`
+- [x] 2.1 Lint passes: `npm run lint`
+- [x] 2.2 Static isolation guard passes with NO DB env (`npm test -- predictions.rls`; RLS describe skips, static describe green)
+- [x] 2.3 Guard fails when a second importer is introduced (verify then revert)
+- [x] 2.4 Full suite green with DB up: `npm test -- rls` (adapted: predictions.rls 18/18 green; results-scoring.rls has a pre-existing supabase-js 2.105.3 node-env WebSocket failure, unrelated to this change — tracked in test-plan §6.6)
 
 #### Manual
 
-- [ ] 2.5 §6.2 / §6.6 of test-plan.md readable as a standalone cookbook entry; Phase 2 status → complete
-- [ ] 2.6 Importer/reader intuition matches the guard (only supabase-admin.ts reads key, only actions/index.ts imports it)
+- [x] 2.5 §6.2 / §6.6 of test-plan.md readable as a standalone cookbook entry; Phase 2 status → complete
+- [x] 2.6 Importer/reader intuition matches the guard (only supabase-admin.ts reads key, only actions/index.ts imports it)

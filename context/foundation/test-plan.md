@@ -6,7 +6,7 @@
 >
 > Refresh: re-run `/10x-test-plan --refresh` when stale (see §8).
 >
-> Last updated: 2026-06-05 (Phase 1 complete)
+> Last updated: 2026-06-08 (Phase 2 complete)
 
 ## 1. Strategy
 
@@ -90,7 +90,7 @@ orchestrator updates Status as artifacts appear on disk.
 | # | Phase name | Goal (one line) | Risks covered | Test types | Status | Change folder |
 |---|------------|-----------------|----------------|------------|--------|---------------|
 | 1 | Scoring & ranking correctness | Pin FR-018 grid, recompute-on-correction, and tie-break order at the cheapest layer | #2, #7 | unit (or DB-level if scoring is SQL) | complete | context/changes/testing-scoring/ |
-| 2 | Blindness & ownership at the DB boundary | Prove predictions are withheld before kickoff and only the owner can mutate them | #1, #3, #5 | integration (RLS vs live Supabase) | planned | context/changes/testing-blindness-ownership/ |
+| 2 | Blindness & ownership at the DB boundary | Prove predictions are withheld before kickoff and only the owner can mutate them | #1, #3, #5 | integration (RLS vs live Supabase) | complete | context/changes/testing-blindness-ownership/ |
 | 3 | Kickoff-lock & action mutations | Lock holds at the server; result entry is admin-only; correction recomputes | #4, #3 | integration around `src/actions` | not started | — |
 | 4 | Full-flow + CI parity gates | One predict→kickoff→result→leaderboard path; RLS/scoring tests gated in CI against real Postgres | #6, cross-cutting | e2e + gates | not started | — |
 
@@ -137,7 +137,7 @@ lands; before that, the gate is `planned`.
 | lint + typecheck | local + CI | required (existing CI) | syntactic / type drift |
 | check:wrangler | pre-commit + CI | required (existing CI) | removal of `nodejs_compat` flag that breaks Supabase SSR |
 | unit + integration | local + CI | required after §3 Phase 1 | scoring / ranking / logic regressions |
-| RLS tests vs real Postgres | CI | required after §3 Phase 2 | blindness / ownership / service-role leaks |
+| RLS tests vs real Postgres | CI | required (active since §3 Phase 2) | blindness / ownership / service-role leaks |
 | e2e on the critical flow | CI on PR | planned — §3 Phase 4 | broken predict→result→leaderboard path |
 | pre-prod smoke | between merge + prod | planned — §3 Phase 4 | local↔deployed-DB divergence (Risk #6) |
 | visual / snapshot | — | excluded (see §7) | n/a |
@@ -165,7 +165,35 @@ relevant rollout phase ships; before that, the sub-section reads "TBD — see
 - **Reference test**: `src/db/predictions.rls.test.ts`,
   `src/db/matches.rls.test.ts`.
 - **Run locally**: `npm test` with the local Supabase stack up.
-- **Blindness/ownership specifics**: TBD — see §3 Phase 2 (Risk #1, #3, #5).
+- **Blindness/ownership specifics** (Phase 2 — Risk #1, #3, #5): predictions
+  combine two test shapes in one file (`src/db/predictions.rls.test.ts`):
+  1. **Live-DB RLS cases** inside the `describe.skipIf(!dbConfigured)` block —
+     reuse the shared `beforeAll` fixtures (`participantA`/`participantB`/`admin`/
+     `service`, a future + past match, A's seeded predictions). Idioms:
+     - *blindness* (#1): a non-owner `.select(...).eq("match_id", future)` —
+       with OR without the owner filter — → `expect(error).toBeNull(); expect(data ?? []).toHaveLength(0)`.
+     - *spoofed-owner INSERT* (#3): as B, `insert({ predictor_id: aUserId, … })`
+       → `expect(error).not.toBeNull()` (RLS WITH CHECK `predictor_id = auth.uid()`).
+     - *cross-owner UPDATE / DELETE* (#3): as B, target A's row → `error` null,
+       `data` zero rows. NOTE these are **double-guarded**: the SELECT/blindness
+       policy gates row-finding for UPDATE/DELETE, so B cannot even locate A's
+       pre-kickoff row. To watch a DELETE/UPDATE test fail "for the right reason"
+       you must ALSO relax `predictions_select` (proven during Phase 2 verification).
+     - *anon denial* (#1): an anon-key client with no sign-in → zero rows (the
+       policy is `to authenticated` only).
+     - *near-boundary crossing* (#1): seed a match ~3s out, A predicts pre-kickoff,
+       assert B blind, then **poll** until past kickoff (never a fixed sleep) and
+       assert reveal on the same row; wrap in one `it(…, 20000)`.
+  2. **Static isolation guard** (#5) in a top-level, **non-skip-gated**
+     `describe` so it runs in the default `ci` job (no DB) — exactly where
+     catching a new service-role importer matters most. Read raw production
+     source via `import.meta.glob("/src/**/*.{ts,tsx,astro}", { query: "?raw",
+     import: "default", eager: true })`, exclude `*.test.*` and `test/`, then
+     assert **counts** (per lessons.md, never a raw `rg` across `src` — test
+     harnesses reference the key name): exactly one reader of
+     `SUPABASE_SERVICE_ROLE_KEY` via `astro:env/server` (`supabase-admin.ts`),
+     exactly one importer of the admin client (`actions/index.ts`), and no
+     `.from(` on `supabase-admin.ts` (auth-only, RLS-bypassing client).
 
 ### 6.3 Adding an action-layer test
 
@@ -184,6 +212,24 @@ relevant rollout phase ships; before that, the sub-section reads "TBD — see
 ### 6.6 Per-rollout-phase notes
 
 (Filled in by `/10x-implement` as each phase lands.)
+
+- **Phase 2 — Blindness & ownership at the DB boundary (2026-06-08)** —
+  extended `src/db/predictions.rls.test.ts` with 6 live-DB RLS cases (#1/#3:
+  spoofed-owner INSERT, cross-owner UPDATE/DELETE, unfiltered-list blindness,
+  anon denial, near-boundary kickoff crossing) plus a static, no-DB
+  service-role isolation guard (#5). Pattern is documented in §6.2. No
+  production code or RLS policy changed — the enforcement already existed; the
+  phase pins it.
+  - **Known pre-existing issue (NOT introduced by this phase), tracked here:**
+    `npm test -- rls` currently fails in `src/db/results-scoring.rls.test.ts`
+    (Phase 1 file, untouched by Phase 2). The installed
+    `@supabase/supabase-js` (2.105.3, declared `^2.99.1`) breaks realtime
+    WebSocket construction inside that file's `@vitest-environment node`
+    context (`getWebSocketConstructor` throws at client init). `predictions.rls`
+    runs under `happy-dom` (provides `WebSocket`) and is unaffected — 18/18
+    green. Fix candidates for a future change: pin/align the supabase-js
+    version, or give the node-env RLS files a `ws` transport stub. Open a
+    dedicated change (`/10x-new`) rather than folding it into this rollout.
 
 ## 7. What We Deliberately Don't Test
 
