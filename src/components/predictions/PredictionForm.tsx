@@ -104,7 +104,7 @@ export function PredictionForm({ matchId, homeTeam, awayTeam, initial }: Props) 
           )}
         />
         {serverError && <p className="w-full text-sm text-red-600">{serverError}</p>}
-        <Button type="submit" disabled={form.formState.isSubmitting}>
+        <Button type="submit" className="w-full sm:w-auto" disabled={form.formState.isSubmitting}>
           {initial ? "Update" : "Save"}
         </Button>
       </form>

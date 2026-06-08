@@ -80,7 +80,7 @@ const fmtScore = (pair: { homeGoals: number; awayGoals: number } | { homeScore: 
 ---
 
 <Layout title={notFound ? "History" : `${displayName}'s history`}>
-  <main class="mx-auto max-w-3xl space-y-6 p-6">
+  <main class="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
     <header>
       <h1 class="text-2xl font-bold">{notFound ? "History" : `${displayName}'s history`}</h1>
       {
@@ -100,7 +100,35 @@ const fmtScore = (pair: { homeGoals: number; awayGoals: number } | { homeScore: 
         <p class="text-muted-foreground text-sm">No revealed history yet.</p>
       ) : (
         <section class="space-y-4">
-          <table class="w-full text-left text-sm">
+          <ul class="divide-border divide-y rounded-md border sm:hidden">
+            {rows.map((row) => (
+              <li class="space-y-1 p-3">
+                <div class="font-medium">
+                  {row.homeTeam} vs {row.awayTeam}
+                </div>
+                <div class="text-muted-foreground text-sm tabular-nums">{row.kickoffLocal}</div>
+                <dl class="space-y-1 text-sm">
+                  <div class="flex justify-between gap-4">
+                    <dt class="text-muted-foreground">Prediction</dt>
+                    <dd class="tabular-nums">{fmtScore(row.prediction)}</dd>
+                  </div>
+                  <div class="flex justify-between gap-4">
+                    <dt class="text-muted-foreground">Result</dt>
+                    <dd class="tabular-nums">{fmtScore(row.result)}</dd>
+                  </div>
+                  <div class="flex justify-between gap-4">
+                    <dt class="text-muted-foreground">Points</dt>
+                    <dd class="font-medium tabular-nums">{row.points ?? "—"}</dd>
+                  </div>
+                </dl>
+              </li>
+            ))}
+            <li class="flex justify-between gap-4 p-3 font-medium">
+              <span>Total</span>
+              <span class="tabular-nums">{totalPoints}</span>
+            </li>
+          </ul>
+          <table class="hidden w-full text-left text-sm sm:table">
             <thead>
               <tr class="border-b">
                 <th class="py-2 font-medium">Match</th>

@@ -54,9 +54,7 @@ export function DeleteParticipantButton({ id, displayName }: DeleteParticipantBu
   return (
     <AlertDialog open={open} onOpenChange={handleOpenChange}>
       <AlertDialogTrigger asChild>
-        <Button variant="destructive" size="sm">
-          Delete
-        </Button>
+        <Button variant="destructive">Delete</Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>

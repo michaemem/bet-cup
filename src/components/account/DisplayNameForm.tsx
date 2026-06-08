@@ -79,7 +79,7 @@ export function DisplayNameForm({ currentDisplayName }: Props) {
         />
         {serverError && <p className="text-sm text-red-600">{serverError}</p>}
         {success && <p className="text-sm text-green-600">Display name updated.</p>}
-        <Button type="submit" disabled={form.formState.isSubmitting || success}>
+        <Button type="submit" className="w-full sm:w-auto" disabled={form.formState.isSubmitting || success}>
           Save display name
         </Button>
       </form>

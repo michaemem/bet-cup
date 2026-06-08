@@ -3,7 +3,7 @@ project: BetCup
 version: 1
 status: draft
 created: 2026-05-28
-updated: 2026-06-05
+updated: 2026-06-08
 prd_version: 1
 main_goal: speed
 top_blocker: time
@@ -37,6 +37,8 @@ BetCup is a private prediction pool for one friend group running one football to
 | S-05 | participant-match-history | participant reviews their own match-by-match history (prediction, result, points) and views any other participant's revealed (post-kickoff) history from the leaderboard | S-04 | FR-021, FR-021b | done |
 | S-06 | delete-participant | admin removes a participant; their predictions and earned points disappear from history and the leaderboard | S-01, S-04 | FR-004 | done |
 | S-07 | participant-changes-password | user (participant or admin) changes their own password and display name from a settings page | F-01 | FR-003, FR-023 | done |
+| S-08 | mobile-responsive-ui | use every page comfortably on a phone — no horizontal overflow, tap-friendly forms, readable leaderboard/history tables — with desktop and behavior unchanged | S-02, S-03, S-04, S-05, S-07 | FR-025; see `## Parked` | done |
+| S-09 | admin-reset-participant-password | admin resets any participant's password (system-generated temp); the participant's sessions are revoked and they sign in with the temp password, then change it in `/settings` | S-01, F-01 | FR-024 (relates FR-002, FR-003) | proposed |
 
 ## Streams
 
@@ -47,6 +49,7 @@ Navigation aid — groups items that share a `Prerequisites` chain. Canonical or
 | A | Setup | `F-01` → (`S-01` ∥ `S-02`) | Identity boundary first; then admin readies the world. `S-01` and `S-02` can run in parallel — under `top_blocker: time` this is the cheapest fan-out. |
 | B | North-star path | `S-03` → `S-04` | The validation milestone: integrity invariant (FR-015 blindness) plus scoring correctness. Joins Stream A at `S-02` (matches must exist) and at `S-01` (testable participants speed up `S-03`). |
 | C | Fan-out polish | `S-05`, `S-06`, `S-07` | Reachable in parallel after `S-04` (or earlier for `S-07`, which only needs `F-01`). Order driven by what the first real users hit first; `S-07` is deferred under `speed` because it is orthogonal to the must-have validation path. |
+| D | Post-MVP polish | `S-08` ∥ `S-09` | Added after the v1 MVP (F-01, S-01..S-07) shipped. Both are independent of each other and of the remaining chain — `S-08` restyles already-shipped pages; `S-09` extends the already-shipped manage-participants surface. Run in either order or in parallel. |
 
 ## Baseline
 
@@ -170,6 +173,35 @@ What's already in place in the codebase as of 2026-05-28 (auto-researched + user
 - **Risk:** lowest-risk slice; Supabase auth has a built-in `updateUser({ password })` flow. Sequenced last under `main_goal: speed` because it's orthogonal to the chain of must-have FRs that lead to the north star (F-01 → S-02 → S-03 → S-04) — but it remains must-have because the admin-set initial-password handoff is incomplete without a way for the participant to rotate it.
 - **Status:** done
 
+### S-08: Mobile-responsive UI across all pages
+
+- **Outcome:** on a phone-sized screen, every page — auth, dashboard, predictions, leaderboard, participant history, settings, and the admin tournament/match and manage-participants views — renders without horizontal overflow and is comfortably usable: the leaderboard and history tables reflow or scroll within their own container instead of breaking the layout, the prediction-entry and sign-in forms have tap-friendly inputs and controls, and spacing, font sizes, and touch targets are sized for small screens. The desktop layout is unchanged (responsive, not mobile-only); the change is presentation-only (no behavior or data changes) and Tailwind-only (no new UI dependencies); the blindness and kickoff-lock cues stay unambiguous in the compact layouts.
+- **Change ID:** `mobile-responsive-ui`
+- **PRD refs:** FR-025 (responsive presentation on mobile browsers; desktop + behavior unchanged); see also `## Parked` (native mobile/PWA stays parked).
+- **Prerequisites:** S-02, S-03, S-04, S-05, S-07 (the pages it restyles must exist — all shipped)
+- **Parallel with:** S-09
+- **Blockers:** —
+- **Unknowns:**
+  - Small-screen table strategy: horizontal scroll inside a container vs. a stacked/card reflow for the leaderboard and history — which reads better on the group's typical phones? Owner: `/10x-plan`. Block: no.
+  - Breakpoint floor (e.g. ~360px portrait) and whether any specific device the group uses needs explicit verification. Owner: user. Block: no.
+- **Risk:** although presentation-only, the FR-015 blindness invariant has a UI dimension — a compact layout that accidentally surfaces another participant's pre-kickoff prediction, or that obscures the locked/unlocked state, would be a real regression rather than a cosmetic one. Mitigation: the explicit guardrail that blindness/lock cues remain clear, backed by the existing server-side RLS enforcement (the data is withheld regardless of layout).
+- **Status:** done
+
+### S-09: Admin resets a participant's password
+
+- **Outcome:** from the existing "manage participants" view, the admin triggers a password reset for any participant; the system generates a new random temporary password that the admin copies and shares with the participant out-of-band (the same handoff model as the S-01 initial password). The reset revokes the participant's existing sessions, the old password stops working, and the participant signs in with the temporary password and can then change it themselves on the existing `/settings` page (no forced change-on-next-login).
+- **Change ID:** `admin-reset-participant-password`
+- **PRD refs:** FR-024 (admin resets a participant's password); relates to FR-002 (admin sets the initial password), FR-003 (user changes their own password), FR-001/FR-004 (manage participants).
+- **Prerequisites:** S-01 (manage-participants view + the tightly-scoped service-role participant-admin surface), F-01
+- **Parallel with:** S-08
+- **Blockers:** —
+- **Unknowns:**
+  - Which Supabase admin surface performs the reset (service-role `auth.admin.updateUserById({ password })`) and how to keep it confined to the existing auth-only service-role client without widening the FR-015 blast radius (AGENTS.md service-role guard; `lessons.md` isolation rule). Owner: `/10x-plan`. Block: no.
+  - Generated-password shape (length / charset) and how it is surfaced to the admin exactly once (copy-to-clipboard, shown-once vs. re-viewable). Owner: `/10x-plan`. Block: no.
+  - Session-revocation mechanism (global sign-out of the target user) and confirming it leaves the admin's own session intact. Owner: `/10x-plan`. Block: no.
+- **Risk:** this reuses the service-role admin client — the single most sensitive surface for FR-015 blindness. The reset is auth-only and must never read predictions; scoping it to the existing admin-auth client and leaning on the service-role isolation guard (added in the `testing-blindness-ownership` change) is the mitigation. Secondary: the generated temporary password must never be logged.
+- **Status:** proposed
+
 ## Backlog Handoff
 
 | Roadmap ID | Change ID | Suggested issue title | Ready for `/10x-plan` | Notes |
@@ -182,6 +214,8 @@ What's already in place in the codebase as of 2026-05-28 (auto-researched + user
 | S-05 | participant-match-history | Participant views their own and others' revealed match-by-match history (FR-021, FR-021b) | no | Unblocks once S-04 is `done` |
 | S-06 | delete-participant | Admin deletes a participant; predictions and points are removed | no | Unblocks once S-01 + S-04 are `done` |
 | S-07 | participant-changes-password | User (participant or admin) changes their own password and display name | yes | Landed — `/settings` page; both roles change their own password + display name |
+| S-08 | mobile-responsive-ui | Make every page responsive and usable on mobile browsers | yes | Post-v1 polish; presentation-only, Tailwind-only; prereq pages all shipped |
+| S-09 | admin-reset-participant-password | Admin resets a participant's password (system-generated temp; sessions revoked) | yes | Post-v1; reuses the scoped service-role admin client; participant self-changes via `/settings` afterward |
 
 ## Open Roadmap Questions
 
@@ -211,6 +245,7 @@ _All roadmap questions resolved. Decisions recorded inline below and reflected i
 - **S-05: (a) participant opens a "my history" view and sees their own prediction, the actual result (when entered), and the points earned for each match they predicted or that has a result; a match they predicted but that has no result yet is listed showing the prediction but no points; future matches they have not predicted are omitted. Their running point total matches the leaderboard total for them. (b) clicking any name on the leaderboard opens that participant's history, showing only kicked-off matches — their revealed predictions, results, and points — never their pre-kickoff picks (blindness preserved per FR-015). Listing rule (both views): a match appears when the viewed participant has a prediction for it or a result exists.** — Archived 2026-06-05 → `context/archive/2026-06-05-participant-match-history/`. Lesson: —.
 - **S-07: any logged-in user (participant or admin) opens a settings page where they can (a) change their display name — the name shown on the leaderboard and in other participants' revealed history — and (b) change their password. Each change requires confirming the current password; a successful password change signs out the user's other sessions (the current device stays signed in), the old password no longer works, and subsequent logins use the new password. The display-name change propagates to the dashboard, leaderboard, and history views.** — Archived 2026-06-05 → `context/archive/2026-06-05-participant-changes-password/`. Lesson: —.
 - **S-06: admin removes a participant from a "manage participants" view; that participant's predictions and earned points disappear from any other participant's history view and from the leaderboard (the deleted participant no longer appears in standings).** — Archived 2026-06-05 → `context/archive/2026-06-05-delete-participant/`. Lesson: —.
+- **S-08: on a phone-sized screen, every page — auth, dashboard, predictions, leaderboard, participant history, settings, and the admin tournament/match and manage-participants views — renders without horizontal overflow and is comfortably usable: the leaderboard and history tables reflow or scroll within their own container instead of breaking the layout, the prediction-entry and sign-in forms have tap-friendly inputs and controls, and spacing, font sizes, and touch targets are sized for small screens. The desktop layout is unchanged (responsive, not mobile-only); the change is presentation-only (no behavior or data changes) and Tailwind-only (no new UI dependencies); the blindness and kickoff-lock cues stay unambiguous in the compact layouts.** — Archived 2026-06-08 → `context/archive/2026-06-08-mobile-responsive-ui/`. Lesson: —.
 
 ## GitHub issues
 

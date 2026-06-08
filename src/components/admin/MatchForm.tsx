@@ -66,13 +66,13 @@ function KickoffField({ value, onChange }: { value: string; onChange: (next: str
   };
 
   return (
-    <div className="flex gap-2">
+    <div className="flex flex-col gap-2 sm:flex-row">
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             type="button"
             variant="outline"
-            className={cn("w-44 justify-start font-normal", !date && "text-muted-foreground")}
+            className={cn("w-full justify-start font-normal sm:w-44", !date && "text-muted-foreground")}
           >
             <CalendarIcon className="mr-2 size-4" />
             {date ? format(date, "PPP") : "Pick a date"}
@@ -94,7 +94,7 @@ function KickoffField({ value, onChange }: { value: string; onChange: (next: str
       <Input
         type="time"
         aria-label="Kickoff time"
-        className="w-32"
+        className="w-full sm:w-32"
         value={time}
         onChange={(event) => {
           setTime(event.target.value);
@@ -162,10 +162,10 @@ export function MatchForm({ timeZone, match, onSaved }: Props) {
             control={form.control}
             name="homeTeam"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="w-full sm:w-auto">
                 <FormLabel>Home</FormLabel>
                 <FormControl>
-                  <Input placeholder="Home team" className="w-40" {...field} />
+                  <Input placeholder="Home team" className="w-full sm:w-40" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -175,10 +175,10 @@ export function MatchForm({ timeZone, match, onSaved }: Props) {
             control={form.control}
             name="awayTeam"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="w-full sm:w-auto">
                 <FormLabel>Away</FormLabel>
                 <FormControl>
-                  <Input placeholder="Away team" className="w-40" {...field} />
+                  <Input placeholder="Away team" className="w-full sm:w-40" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -188,7 +188,7 @@ export function MatchForm({ timeZone, match, onSaved }: Props) {
             control={form.control}
             name="kickoffLocal"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="w-full sm:w-auto">
                 <FormLabel>Kickoff ({timeZone})</FormLabel>
                 <FormControl>
                   <KickoffField value={field.value} onChange={field.onChange} />

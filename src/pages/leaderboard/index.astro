@@ -41,7 +41,7 @@ const hasResults = rows.some((row) => row.totalPoints > 0);
 ---
 
 <Layout title="Leaderboard">
-  <main class="mx-auto max-w-3xl space-y-6 p-6">
+  <main class="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
     <header>
       <h1 class="text-2xl font-bold">Leaderboard</h1>
       <p class="text-muted-foreground text-sm">
@@ -61,7 +61,26 @@ const hasResults = rows.some((row) => row.totalPoints > 0);
               No results entered yet — standings appear once the admin enters a result.
             </p>
           )}
-          <table class="w-full text-left text-sm">
+          <ul class="divide-border divide-y rounded-md border sm:hidden">
+            {rows.map((row, index) => (
+              <li class="flex items-center justify-between gap-4 p-3">
+                <div class="min-w-0">
+                  <span class="text-muted-foreground mr-2 tabular-nums">#{index + 1}</span>
+                  <a
+                    href={`/history/${row.participantId}`}
+                    class="font-medium break-words underline hover:no-underline"
+                  >
+                    {row.displayName}
+                  </a>
+                </div>
+                <div class="shrink-0 text-right text-sm">
+                  <div class="font-medium tabular-nums">Points: {row.totalPoints}</div>
+                  <div class="text-muted-foreground tabular-nums">Exact: {row.exactScores}</div>
+                </div>
+              </li>
+            ))}
+          </ul>
+          <table class="hidden w-full text-left text-sm sm:table">
             <thead>
               <tr class="border-b">
                 <th class="w-12 py-2 font-medium">#</th>

@@ -39,7 +39,7 @@ export function MatchList({ timeZone, matches }: Props) {
     <ul className="divide-border divide-y rounded-md border">
       {matches.map((match) => (
         <li key={match.id} className="p-3">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <div>
               <span className="font-medium">
                 {match.homeTeam} vs {match.awayTeam}
@@ -54,7 +54,6 @@ export function MatchList({ timeZone, matches }: Props) {
               <Button
                 type="button"
                 variant="ghost"
-                size="sm"
                 onClick={() => {
                   setEditingId(null);
                 }}
@@ -65,7 +64,6 @@ export function MatchList({ timeZone, matches }: Props) {
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
                 onClick={() => {
                   setEditingId(match.id);
                 }}

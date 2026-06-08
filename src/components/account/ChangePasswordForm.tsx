@@ -87,7 +87,7 @@ export function ChangePasswordForm() {
         />
         {serverError && <p className="text-sm text-red-600">{serverError}</p>}
         {success && <p className="text-sm text-green-600">Password changed; other devices were signed out.</p>}
-        <Button type="submit" disabled={form.formState.isSubmitting || success}>
+        <Button type="submit" className="w-full sm:w-auto" disabled={form.formState.isSubmitting || success}>
           Change password
         </Button>
       </form>
