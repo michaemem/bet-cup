@@ -47,8 +47,9 @@ Adopt Conventional Commits as the default convention. PRs must pass `lint` + `ch
 - Local env: copy `.env.example` to `.env` (Node) and `.dev.vars` (Cloudflare local). Both gitignored.
 - MCP servers wired in `@.cursor/mcp.json`: `cloudflare-docs` (read-only, public) and `cloudflare-observability` (Workers Logs read-only; OAuths on first use against your Cloudflare account).
 - Cloudflare deploy: auto on push to `main`; manual fallback `npx wrangler deploy`; production secrets via `npx wrangler secret put`.
+- **Supabase migrations are NOT auto-applied to prod.** CI's `deploy` job only runs `wrangler deploy` — it never runs `supabase db push`. After any new migration merges to `main`, apply it to prod manually: `npx supabase db push` (preview first with `--dry-run`). Check drift any time with `npx supabase migration list --linked` (linked project: `betcup-prod`). `db push` applies schema only — it does not load `supabase/seed.sql` (local-only).
 - GitHub Actions secrets required: `SUPABASE_URL`, `SUPABASE_KEY` (build-time), `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` (deploy-time).
-- Worker name: `betcup`. Production URL: `https://betcup.betcup.workers.dev`.
+- Worker name: `betcup`. Production URL: `https://betcup.pacs.workers.dev` (account `workers.dev` subdomain is `pacs`; the Worker name stays `betcup`).
 
 ## Rollback runbook
 
