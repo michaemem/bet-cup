@@ -75,7 +75,7 @@ Establish the mobile-first `sm:` convention and fix the app shell so every page 
 
 **Intent**: Give the dashboard card a mobile width cap with full-width behavior, and stack the participant/admin nav link rows vertically full-width on mobile, returning to the horizontal row at `sm:`. Make each link/sign-out button full-width on mobile for a clear tap target.
 
-**Contract**: card gains `w-full max-w-sm` (centered via existing flex); nav containers go `flex flex-col sm:flex-row` with full-width links on mobile (`block w-full text-center sm:inline-block sm:w-auto`). No link targets or counts change.
+**Contract**: card gains `w-full max-w-sm` on mobile, reverted at `sm:` with `sm:w-auto sm:max-w-none` (the original card had no width cap — without the revert, `max-w-sm` clips the desktop horizontal nav row; landed in commit acb92a4); nav containers go `flex flex-col sm:flex-row` with full-width links on mobile (`block w-full text-center sm:inline-block sm:w-auto`). No link targets or counts change.
 
 #### 3. Auth sign-in card check
 
@@ -186,7 +186,7 @@ Make forms and interactive list rows tap-friendly and overflow-free at 360px, fi
 
 **Intent**: Ensure the `w-20` score inputs + submit wrap cleanly and the submit is comfortably tappable on mobile.
 
-**Contract**: keep `flex flex-wrap items-end gap-3`; make the submit `Button` full-width on mobile if it crowds (`w-full sm:w-auto`). Inputs stay `w-20`. Composed via `cn()`.
+**Contract**: keep `flex flex-wrap items-end gap-3`; make the submit `Button` full-width on mobile if it crowds (`w-full sm:w-auto`). Inputs stay `w-20`. Use `cn()` only if composing conditional classes; a plain static `className` literal is fine and matches the prevailing call-site convention.
 
 #### 3. MatchForm kickoff + team rows
 
@@ -202,7 +202,7 @@ Make forms and interactive list rows tap-friendly and overflow-free at 360px, fi
 
 **Intent**: The fixed-width preview inputs (`w-36 + w-36 + w-44` + status text ≈ 480px) overflow even with `flex-wrap`; make them stack/full-width on mobile.
 
-**Contract**: preview row inputs become `w-full sm:w-36` / `sm:w-44`; row stays `flex flex-wrap … gap-2`; status text wraps. Textarea (`w-full min-h-28`) unchanged. Composed via `cn()`.
+**Contract**: preview row inputs become `w-full sm:w-36` / `sm:w-44`; row stays `flex flex-wrap … gap-2`; status text wraps. Textarea (`w-full min-h-28`) unchanged. Use `cn()` only if composing conditional classes; a plain static `className` literal is fine.
 
 #### 5. ParticipantForm & credentials panel
 
@@ -218,7 +218,7 @@ Make forms and interactive list rows tap-friendly and overflow-free at 360px, fi
 
 **Intent**: Enlarge the ~16px icon-only toggle's tap area without changing its appearance.
 
-**Contract**: add padding/min hit-area to the button (e.g. `p-2 -m-2` so the visual position is unchanged) keeping the `size-4` icon. Composed via `cn()`.
+**Contract**: add padding/min hit-area to the button (e.g. `p-2 -m-2` so the visual position is unchanged) keeping the `size-4` icon. Use `cn()` only if composing conditional classes; a plain static `className` literal is fine.
 
 #### 7. Settings forms check
 
