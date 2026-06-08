@@ -56,6 +56,8 @@ async function signedInClient(email: string, password: string): Promise<Supabase
   return client;
 }
 
+const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+
 describe.skipIf(!dbConfigured)("predictions RLS — blindness + write-lock (live DB)", () => {
   let service: SupabaseClient<Database>;
   let admin: SupabaseClient<Database>;
@@ -243,4 +245,129 @@ describe.skipIf(!dbConfigured)("predictions RLS — blindness + write-lock (live
     // unique (predictor_id, match_id) → conflict (23505).
     expect(error).not.toBeNull();
   });
+
+  // ── #3 Ownership / IDOR: B cannot author, mutate, or remove A's prediction ──
+
+  it("denies B inserting a prediction spoofing A as the owner (RLS WITH CHECK)", async () => {
+    const { error } = await participantB
+      .from("predictions")
+      .insert({ predictor_id: aUserId, match_id: futureMatchId, home_goals: 7, away_goals: 7 })
+      .select("id");
+
+    // WITH CHECK (predictor_id = auth.uid()) is violated — B is not A.
+    expect(error).not.toBeNull();
+  });
+
+  it("blocks B from updating A's prediction (RLS USING — zero rows)", async () => {
+    const { data, error } = await participantB
+      .from("predictions")
+      .update({ home_goals: 8, away_goals: 8 })
+      .eq("match_id", futureMatchId)
+      .eq("predictor_id", aUserId)
+      .select("id");
+
+    // UPDATE USING (predictor_id = auth.uid()) filters A's row out for B → zero rows.
+    expect(error).toBeNull();
+    expect(data ?? []).toHaveLength(0);
+
+    // A's row is untouched (still readable by A with its own values).
+    const owner = await participantA
+      .from("predictions")
+      .select("home_goals, away_goals")
+      .eq("match_id", futureMatchId)
+      .eq("predictor_id", aUserId);
+    expect(owner.error).toBeNull();
+    expect(owner.data).toHaveLength(1);
+  });
+
+  it("blocks B from deleting A's prediction (no DELETE policy — zero rows)", async () => {
+    const { data, error } = await participantB
+      .from("predictions")
+      .delete()
+      .eq("match_id", futureMatchId)
+      .eq("predictor_id", aUserId)
+      .select("id");
+
+    // There is no DELETE policy, so USING matches nothing → zero rows affected, no error.
+    expect(error).toBeNull();
+    expect(data ?? []).toHaveLength(0);
+
+    // A's row survives the delete attempt.
+    const owner = await participantA
+      .from("predictions")
+      .select("id")
+      .eq("match_id", futureMatchId)
+      .eq("predictor_id", aUserId);
+    expect(owner.error).toBeNull();
+    expect(owner.data).toHaveLength(1);
+  });
+
+  // ── #1 Blindness edges: unfiltered list, anon denial, near-boundary crossing ──
+
+  it("hides A's pre-kickoff prediction from B even without an owner filter (0 rows)", async () => {
+    // Dropping the owner filter must not bypass blindness — only A has predicted
+    // this future match, so a non-owner list query returns none of A's rows.
+    const { data, error } = await participantB
+      .from("predictions")
+      .select("predictor_id, home_goals, away_goals")
+      .eq("match_id", futureMatchId);
+
+    expect(error).toBeNull();
+    expect(data ?? []).toHaveLength(0);
+  });
+
+  it("denies an unauthenticated client any prediction rows (policy is to authenticated)", async () => {
+    const anon = freshClient(ANON_KEY);
+    const { data, error } = await anon.from("predictions").select("id").eq("match_id", futureMatchId);
+
+    // No anon policy exists → default-denied; the anon role sees zero rows.
+    expect(data ?? []).toHaveLength(0);
+    expect(error ?? null).toBeNull();
+  });
+
+  it("flips A's prediction from blind to revealed for B as the match crosses kickoff", async () => {
+    // Seed a dedicated match kicking off a few seconds out (hung off the existing
+    // tournament so afterAll's cascade still cleans it up). A predicts it through
+    // A's own session BEFORE kickoff (real INSERT path).
+    const leadMs = 3000;
+    const kickoffMs = Date.now() + leadMs;
+    const boundaryMatchId = await seedMatch(new Date(kickoffMs).toISOString(), "Boundary", "Crossing");
+
+    const aWrite = await participantA
+      .from("predictions")
+      .insert({ predictor_id: aUserId, match_id: boundaryMatchId, home_goals: 2, away_goals: 1 })
+      .select("id");
+    expect(aWrite.error).toBeNull();
+
+    // Before kickoff: B is blind to A's prediction.
+    const blind = await participantB
+      .from("predictions")
+      .select("home_goals, away_goals")
+      .eq("match_id", boundaryMatchId)
+      .eq("predictor_id", aUserId);
+    expect(blind.error).toBeNull();
+    expect(blind.data ?? []).toHaveLength(0);
+
+    // Poll until Postgres' now() has crossed kickoff (robust to small clock skew
+    // and avoids a single fixed sleep firing a hair early).
+    const deadline = Date.now() + 15000;
+    let revealed: { home_goals: number; away_goals: number }[] | null = null;
+    while (Date.now() < deadline) {
+      const { data } = await participantB
+        .from("predictions")
+        .select("home_goals, away_goals")
+        .eq("match_id", boundaryMatchId)
+        .eq("predictor_id", aUserId);
+      if ((data ?? []).length === 1) {
+        revealed = data;
+        break;
+      }
+      await sleep(250);
+    }
+
+    // After kickoff: the same row is now visible to B with A's values.
+    expect(revealed).not.toBeNull();
+    expect(revealed).toHaveLength(1);
+    expect(revealed?.[0]).toEqual({ home_goals: 2, away_goals: 1 });
+  }, 20000);
 });
