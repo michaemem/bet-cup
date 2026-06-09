@@ -339,26 +339,26 @@ Negligible at the 5–20-user scale: one indexed `user_roles` read, one `updateU
 
 #### Automated
 
-- [x] 3.1 Lint/type-check clean: `npx astro sync && npm run lint`
-- [x] 3.2 Build passes: `npm run build`
-- [x] 3.3 `check:wrangler` passes
+- [x] 3.1 Lint/type-check clean: `npx astro sync && npm run lint` — 19f2f9c
+- [x] 3.2 Build passes: `npm run build` — 19f2f9c
+- [x] 3.3 `check:wrangler` passes — 19f2f9c
 
 #### Manual
 
-- [x] 3.4 Each row shows "Reset password" beside "Delete" (verified in SSR markup: per-row outline trigger before destructive Delete, both layouts)
-- [x] 3.5 Confirm dialog warns about invalidation; confirming reveals a temp password with working Copy; list does NOT reload until "Done" (user-confirmed in browser)
-- [x] 3.6 A reset error keeps the dialog open with a message (user-confirmed in browser)
-- [x] 3.7 Correct layout on mobile card list + desktop table, no horizontal overflow (user-confirmed in browser)
+- [x] 3.4 Each row shows "Reset password" beside "Delete" (verified in SSR markup: per-row outline trigger before destructive Delete, both layouts) — 19f2f9c
+- [x] 3.5 Confirm dialog warns about invalidation; confirming reveals a temp password with working Copy; list does NOT reload until "Done" (user-confirmed in browser) — 19f2f9c
+- [x] 3.6 A reset error keeps the dialog open with a message (user-confirmed in browser) — 19f2f9c
+- [x] 3.7 Correct layout on mobile card list + desktop table, no horizontal overflow (user-confirmed in browser) — 19f2f9c
 
 ### Phase 4: Integration tests + isolation guard
 
 #### Automated
 
-- [ ] 4.1 `npm test` stays green in CI (guard + admin-target-refusal + schema run; live reset suite skips cleanly; isolation guard green)
-- [ ] 4.2 `npm test -- participants` passes locally with all `SUPABASE_*` set (old-fails/temp-works/refresh-revoked + admin-target refusal)
-- [ ] 4.3 Lint + build still pass
+- [x] 4.1 `npm test` stays green in CI (guard + admin-target-refusal + schema run; live reset suite skips cleanly; isolation guard green) — 78 passed / 66 skipped
+- [x] 4.2 `npm test -- participants` passes locally with all `SUPABASE_*` set (old-fails/temp-works/refresh-revoked + admin-target refusal) — 13 passed
+- [x] 4.3 Lint + build still pass
 
 #### Manual
 
-- [ ] 4.4 Full loop: reset `bob` → old password fails → temp works → `bob` changes it on `/settings`
-- [ ] 4.5 Live revocation test stable across a couple of reruns
+- [x] 4.4 Full loop: reset `bob` → old password fails → temp works → `bob` changes it on `/settings` (user-confirmed in browser)
+- [x] 4.5 Live revocation test stable across a couple of reruns (3× consecutive: 13 passed each)
