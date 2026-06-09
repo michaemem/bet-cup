@@ -196,9 +196,9 @@ Negligible — `score_prediction` stays a pure `immutable` scalar; the views are
 
 #### Automated
 
-- [x] 2.1 No stale references: `rg -n "3 / 2 / 1|3-point|3 exact|3/2/1"` over `context/foundation` and `src` returns nothing about the old scheme (only the historical `shape-notes.md` discovery record retained by design)
-- [x] 2.2 Lint passes: `npm run lint`
+- [x] 2.1 No stale references: `rg -n "3 / 2 / 1|3-point|3 exact|3/2/1"` over `context/foundation` and `src` returns nothing about the old scheme (only the historical `shape-notes.md` discovery record retained by design) — ef86a99
+- [x] 2.2 Lint passes: `npm run lint` — ef86a99
 
 #### Manual
 
-- [x] 2.3 FR-018/FR-020 + roadmap Q-01 read consistently at 5/3/2/0
+- [x] 2.3 FR-018/FR-020 + roadmap Q-01 read consistently at 5/3/2/0 — ef86a99
