@@ -29,3 +29,14 @@ export const participantDeleteSchema = z.object({
 });
 
 export type ParticipantDeleteInput = z.infer<typeof participantDeleteSchema>;
+
+/**
+ * Validates the reset target id (FR-024). Like delete, the only input is the
+ * target's id — the new temporary password is generated server-side and
+ * revealed once, never typed by the admin.
+ */
+export const participantResetPasswordSchema = z.object({
+  id: z.uuid(),
+});
+
+export type ParticipantResetPasswordInput = z.infer<typeof participantResetPasswordSchema>;

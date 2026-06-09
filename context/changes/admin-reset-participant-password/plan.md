@@ -312,28 +312,28 @@ Negligible at the 5–20-user scale: one indexed `user_roles` read, one `updateU
 
 #### Automated
 
-- [x] 1.1 Migration applies cleanly: `npm run db:reset` completes without error
-- [x] 1.2 Types regenerate: `npm run db:types` exits 0 and `database.types.ts` gains `revoke_user_sessions`
-- [x] 1.3 Type-check/lint clean: `npx astro sync && npm run lint`
+- [x] 1.1 Migration applies cleanly: `npm run db:reset` completes without error — fb6edb2
+- [x] 1.2 Types regenerate: `npm run db:types` exits 0 and `database.types.ts` gains `revoke_user_sessions` — fb6edb2
+- [x] 1.3 Type-check/lint clean: `npx astro sync && npm run lint` — fb6edb2
 
 #### Manual
 
-- [x] 1.4 `public.revoke_user_sessions` exists as SECURITY DEFINER; `anon`/`authenticated` lack EXECUTE, `service_role` has it
-- [x] 1.5 Calling it as service role for a signed-in user removes their `auth.sessions` row(s)
+- [x] 1.4 `public.revoke_user_sessions` exists as SECURITY DEFINER; `anon`/`authenticated` lack EXECUTE, `service_role` has it — fb6edb2
+- [x] 1.5 Calling it as service role for a signed-in user removes their `auth.sessions` row(s) — fb6edb2
 
 ### Phase 2: Server layer — reset schema + `participants.resetPassword` Action
 
 #### Automated
 
-- [ ] 2.1 Lint/type-check clean: `npx astro sync && npm run lint`
-- [ ] 2.2 Build passes: `npm run build`
-- [ ] 2.3 `check:wrangler` passes: `npm run check:wrangler`
-- [ ] 2.4 Unit tests pass: `npm test` (participant-schema suite incl. new reset cases)
-- [ ] 2.5 Isolation guard green: one reader / one importer (`npm test`)
+- [x] 2.1 Lint/type-check clean: `npx astro sync && npm run lint`
+- [x] 2.2 Build passes: `npm run build`
+- [x] 2.3 `check:wrangler` passes: `npm run check:wrangler`
+- [x] 2.4 Unit tests pass: `npm test` (participant-schema suite incl. new reset cases)
+- [x] 2.5 Isolation guard green: one reader / one importer (`npm test`)
 
 #### Manual
 
-- [ ] 2.6 Action reachable with the local service-role key; returns generic not-configured error without it (no crash)
+- [x] 2.6 Action reachable with the local service-role key; returns generic not-configured error without it (no crash)
 
 ### Phase 3: UI layer — per-row `ResetPasswordButton` island
 
