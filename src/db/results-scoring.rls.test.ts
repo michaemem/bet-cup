@@ -6,8 +6,8 @@
  * (`npx supabase start`) because the logic lives in Postgres, not the client:
  *
  *   1. FR-018 scoring rule — exhaustive 16-case grid against the
- *      public.score_prediction() SQL function (3 exact / 2 same goal-difference
- *      / 1 same outcome / 0 wrong, in that load-bearing order).
+ *      public.score_prediction() SQL function (5 exact / 3 same goal-difference
+ *      / 2 same outcome / 0 wrong, in that load-bearing order).
  *   2. Leaderboard tie-break ordering — total_points → exact-score count →
  *      lower(display_name) — and FR-019 completeness (a non-predictor appears
  *      with total_points = 0).
@@ -65,19 +65,19 @@ interface ScoringCase {
 // 16 cases spanning every FR-018 branch: exact / same-difference-nonexact /
 // same-outcome-only / wrong-outcome, across home wins, away wins, and draws.
 const SCORING_GRID: readonly ScoringCase[] = [
-  // exact (3)
-  { label: "exact home win", p: [2, 1], r: [2, 1], expected: 3 },
-  { label: "exact draw", p: [1, 1], r: [1, 1], expected: 3 },
-  { label: "exact away win", p: [0, 2], r: [0, 2], expected: 3 },
-  // same goal-difference, not exact (2)
-  { label: "same diff home win", p: [3, 1], r: [2, 0], expected: 2 },
-  { label: "same diff away win", p: [1, 3], r: [0, 2], expected: 2 },
-  { label: "same diff draw 2-2 vs 1-1", p: [2, 2], r: [1, 1], expected: 2 },
-  { label: "same diff draw 0-0 vs 3-3", p: [0, 0], r: [3, 3], expected: 2 },
-  // same outcome only, different difference (1)
-  { label: "same outcome home win", p: [3, 0], r: [2, 1], expected: 1 },
-  { label: "same outcome away win", p: [0, 3], r: [1, 2], expected: 1 },
-  { label: "same outcome home win wide", p: [4, 1], r: [1, 0], expected: 1 },
+  // exact (5)
+  { label: "exact home win", p: [2, 1], r: [2, 1], expected: 5 },
+  { label: "exact draw", p: [1, 1], r: [1, 1], expected: 5 },
+  { label: "exact away win", p: [0, 2], r: [0, 2], expected: 5 },
+  // same goal-difference, not exact (3)
+  { label: "same diff home win", p: [3, 1], r: [2, 0], expected: 3 },
+  { label: "same diff away win", p: [1, 3], r: [0, 2], expected: 3 },
+  { label: "same diff draw 2-2 vs 1-1", p: [2, 2], r: [1, 1], expected: 3 },
+  { label: "same diff draw 0-0 vs 3-3", p: [0, 0], r: [3, 3], expected: 3 },
+  // same outcome only, different difference (2)
+  { label: "same outcome home win", p: [3, 0], r: [2, 1], expected: 2 },
+  { label: "same outcome away win", p: [0, 3], r: [1, 2], expected: 2 },
+  { label: "same outcome home win wide", p: [4, 1], r: [1, 0], expected: 2 },
   // wrong outcome (0)
   { label: "wrong home pred away result", p: [2, 0], r: [0, 2], expected: 0 },
   { label: "wrong draw pred home result", p: [1, 1], r: [2, 1], expected: 0 },
@@ -88,10 +88,10 @@ const SCORING_GRID: readonly ScoringCase[] = [
   // 0..99 boundary cases (G3): prove the rule holds at the top of the domain.
   // Expected values derived from prd.md:113,129-133 (the FR-018 spec), not from
   // score_prediction's body.
-  { label: "exact upper-bound home win", p: [99, 0], r: [99, 0], expected: 3 },
-  { label: "exact upper-bound draw", p: [99, 99], r: [99, 99], expected: 3 },
-  { label: "same diff near upper bound", p: [5, 0], r: [99, 94], expected: 2 },
-  { label: "same outcome near upper bound", p: [99, 0], r: [1, 0], expected: 1 },
+  { label: "exact upper-bound home win", p: [99, 0], r: [99, 0], expected: 5 },
+  { label: "exact upper-bound draw", p: [99, 99], r: [99, 99], expected: 5 },
+  { label: "same diff near upper bound", p: [5, 0], r: [99, 94], expected: 3 },
+  { label: "same outcome near upper bound", p: [99, 0], r: [1, 0], expected: 2 },
   { label: "wrong at upper bound (away vs home)", p: [0, 99], r: [99, 0], expected: 0 },
 ];
 
@@ -225,9 +225,9 @@ describe.skipIf(!dbConfigured)("results & scoring (live DB)", () => {
     await seedResult(match2Id, 0, 2); // away win, diff -2
 
     // Predictions producing the planned standings:
-    //   Alpha   4 pts, 1 exact  (m1 exact 3, m2 same-outcome 1)
-    //   Bravo   4 pts, 1 exact  (identical to Alpha — name decides vs Alpha)
-    //   Charlie 4 pts, 0 exact  (m1 same-diff 2, m2 same-diff 2)
+    //   Alpha   7 pts, 1 exact  (m1 exact 5, m2 same-outcome 2)
+    //   Bravo   7 pts, 1 exact  (identical to Alpha — name decides vs Alpha)
+    //   Charlie 6 pts, 0 exact  (m1 same-diff 3, m2 same-diff 3)
     //   Delta   0 pts           (no predictions — FR-019 completeness)
     await seedPrediction(alphaId, match1Id, 2, 1);
     await seedPrediction(alphaId, match2Id, 0, 1);
@@ -241,9 +241,9 @@ describe.skipIf(!dbConfigured)("results & scoring (live DB)", () => {
     // recomputeMatchId stays result-less here.
     await seedPrediction(echoId, recomputeMatchId, 2, 1);
 
-    // Case-tie pair (G2/G4): identical predictions → identical total_points (4)
+    // Case-tie pair (G2/G4): identical predictions → identical total_points (7)
     // and exact_scores (1), so only the case-insensitive name fallback can break
-    // the tie. m1 (result 2-1): exact → 3. m2 (result 0-2): same outcome → 1.
+    // the tie. m1 (result 2-1): exact → 5. m2 (result 0-2): same outcome → 2.
     await seedPrediction(aliceId, match1Id, 2, 1);
     await seedPrediction(aliceId, match2Id, 0, 1);
     await seedPrediction(bobId, match1Id, 2, 1);
@@ -280,11 +280,11 @@ describe.skipIf(!dbConfigured)("results & scoring (live DB)", () => {
   // with NO app-side recompute. "Row updated"/HTTP 200 is explicitly not enough.
   // Reads use the service client (both views are security_invoker) to remove
   // per-row RLS visibility as a variable. Initial result maps echo's 2-1
-  // prediction to an EXACT (3) score; the correction flips it to WRONG (0), so a
+  // prediction to an EXACT (5) score; the correction flips it to WRONG (0), so a
   // frozen/broken recompute is detectable.
 
   it("recomputes prediction_scores and leaderboard after a result correction", async () => {
-    // 1. Seed the initial result (2-1 → echo predicted 2-1 → exact, FR-018 = 3).
+    // 1. Seed the initial result (2-1 → echo predicted 2-1 → exact, FR-018 = 5).
     await seedResult(recomputeMatchId, 2, 1);
 
     const initialScore = await service
@@ -294,7 +294,7 @@ describe.skipIf(!dbConfigured)("results & scoring (live DB)", () => {
       .eq("match_id", recomputeMatchId)
       .single();
     expect(initialScore.error).toBeNull();
-    expect(initialScore.data?.points).toBe(3);
+    expect(initialScore.data?.points).toBe(5);
 
     const initialBoard = await service
       .from("leaderboard")
@@ -302,7 +302,7 @@ describe.skipIf(!dbConfigured)("results & scoring (live DB)", () => {
       .eq("participant_id", echoId)
       .single();
     expect(initialBoard.error).toBeNull();
-    expect(initialBoard.data).toMatchObject({ total_points: 3, exact_scores: 1 });
+    expect(initialBoard.data).toMatchObject({ total_points: 5, exact_scores: 1 });
 
     // 2. Correct the result via the production upsert shape (admin, onConflict).
     //    0-2 → echo predicted 2-1 (home win) vs away win → WRONG, FR-018 = 0.
@@ -347,15 +347,15 @@ describe.skipIf(!dbConfigured)("results & scoring (live DB)", () => {
     expect(mine.map((row) => row.participant_id)).toEqual([alphaId, bravoId, charlieId, deltaId]);
 
     const byId = new Map(mine.map((row) => [row.participant_id, row]));
-    expect(byId.get(alphaId)).toMatchObject({ total_points: 4, exact_scores: 1 });
-    expect(byId.get(bravoId)).toMatchObject({ total_points: 4, exact_scores: 1 });
-    expect(byId.get(charlieId)).toMatchObject({ total_points: 4, exact_scores: 0 });
+    expect(byId.get(alphaId)).toMatchObject({ total_points: 7, exact_scores: 1 });
+    expect(byId.get(bravoId)).toMatchObject({ total_points: 7, exact_scores: 1 });
+    expect(byId.get(charlieId)).toMatchObject({ total_points: 6, exact_scores: 0 });
     expect(byId.get(deltaId)).toMatchObject({ total_points: 0, exact_scores: 0 });
   });
 
   // 2b. Case-insensitive name tie-break (G2, G4) ---------------------------
   // Proves FR-020's final fallback is case-INSENSITIVE, not a case-sensitive
-  // byte ordering. "alice"/"Bob" tie on total_points (4) and exact_scores (1),
+  // byte ordering. "alice"/"Bob" tie on total_points (7) and exact_scores (1),
   // so only the name key decides. Under a case-sensitive byte sort (collate "C")
   // "Bob" (B=66) precedes "alice" (a=97); the view's `lower(display_name)` (and
   // the DB's en_US.UTF-8 dictionary collation) put "alice" first. Read in the

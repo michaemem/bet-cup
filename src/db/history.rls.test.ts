@@ -125,7 +125,7 @@ describe.skipIf(!dbConfigured)("history read path — consistency + blindness (l
     pastMatchId = await seedMatch(past, "Past Home", "Past Away");
     futureMatchId = await seedMatch(future, "Future Home", "Future Away");
 
-    // B's exact prediction on the resulted past match → 3 pts (the only points B
+    // B's exact prediction on the resulted past match → 5 pts (the only points B
     // earns). Seeded via service-role because the INSERT policy refuses a
     // post-kickoff write — we need the row to exist to score it.
     await seedResult(pastMatchId, 2, 1);
@@ -159,8 +159,8 @@ describe.skipIf(!dbConfigured)("history read path — consistency + blindness (l
       .single();
     expect(lbError).toBeNull();
 
-    // B's only resulted prediction is the exact past match → 3 pts.
-    expect(summary.totalPoints).toBe(3);
+    // B's only resulted prediction is the exact past match → 5 pts.
+    expect(summary.totalPoints).toBe(5);
     expect(summary.totalPoints).toBe(lb?.total_points ?? 0);
   });
 

@@ -112,10 +112,10 @@ Existing tournament-prediction apps (Kicktipp, Superbru, sweepstakes spreadsheet
 
 ### Scoring & Leaderboard
 
-- FR-018: System computes points for a (prediction, result) pair using: 3 pts if the prediction matches the exact score; else 2 pts if the prediction has the correct goal difference and matches the actual outcome (winner/draw); else 1 pt if the prediction matches only the actual outcome; else 0 pts. Priority: must-have
+- FR-018: System computes points for a (prediction, result) pair using: 5 pts if the prediction matches the exact score; else 3 pts if the prediction has the correct goal difference and matches the actual outcome (winner/draw); else 2 pts if the prediction matches only the actual outcome; else 0 pts. Priority: must-have
 - FR-019: A participant who did not submit a prediction for a match earns 0 points for that match. Priority: must-have
-- FR-020: Participant can view the leaderboard showing all participants ranked by total points across all played matches. Ties are broken by exact-score-prediction count (more 3-point predictions ranks higher); if a tie still remains, participants are ordered alphabetically by name (case-insensitive, ascending). Priority: must-have
-  > Decision (2026-05-28, roadmap Q-01 / #9): primary tie-break is the count of exact-score (3-point) predictions, with alphabetical-by-name as the final deterministic fallback. Chosen over a plain alphabetical default because it rewards prediction precision while staying cheap and deterministic.
+- FR-020: Participant can view the leaderboard showing all participants ranked by total points across all played matches. Ties are broken by exact-score-prediction count (more 5-point predictions ranks higher); if a tie still remains, participants are ordered alphabetically by name (case-insensitive, ascending). Priority: must-have
+  > Decision (2026-05-28, roadmap Q-01 / #9): primary tie-break is the count of exact-score (5-point) predictions, with alphabetical-by-name as the final deterministic fallback. Chosen over a plain alphabetical default because it rewards prediction precision while staying cheap and deterministic.
 - FR-021: Participant can view their own match-by-match history: each of their predictions, the actual result (when entered), and points earned. Priority: must-have
 - FR-021b: Participant can view any other participant's match-by-match history for matches whose scheduled kickoff has passed — that participant's revealed prediction, the actual result (when entered), and points earned. Pre-kickoff predictions remain hidden per FR-015. A match appears in a history view when the viewed participant has a prediction for it or a result has been entered. Priority: must-have
 
@@ -135,7 +135,7 @@ Existing tournament-prediction apps (Kicktipp, Superbru, sweepstakes spreadsheet
 
 **BetCup awards each participant points for each match by comparing their prediction to the actual result, where exact-score predictions earn the most, correct-difference predictions earn fewer, and merely-correct-outcome predictions earn the fewest.**
 
-Inputs to the rule are user-facing values: a participant's prediction (a pair of integers — home goals and away goals) and the match's actual result (a pair of integers entered by the admin). The output is a point value between 0 and 3 inclusive: 3 if the prediction matches the actual score exactly; otherwise 2 if the prediction's goal difference equals the actual goal difference *and* the prediction picks the correct outcome (winner or draw); otherwise 1 if the prediction picks the correct outcome only; otherwise 0. A participant who did not submit a prediction earns 0 points for that match.
+Inputs to the rule are user-facing values: a participant's prediction (a pair of integers — home goals and away goals) and the match's actual result (a pair of integers entered by the admin). The output is one of four point values — 0, 2, 3, or 5: 5 if the prediction matches the actual score exactly; otherwise 3 if the prediction's goal difference equals the actual goal difference *and* the prediction picks the correct outcome (winner or draw); otherwise 2 if the prediction picks the correct outcome only; otherwise 0. A participant who did not submit a prediction earns 0 points for that match.
 
 The participant encounters the rule's output in two places: their own match-by-match history (per-match points + running total), and the leaderboard (sum of per-match points across all played matches, ranked descending). The rule is hardcoded for v1 — configurable scoring schemas are explicitly out of scope.
 
@@ -154,7 +154,7 @@ Two roles: **admin** and **participant**.
 
 - **Multiple tournaments.** The MVP supports exactly one tournament. Adding a tournament selector, cross-tournament leaderboards, or per-user tournament membership is post-MVP. — Rationale: collapses the data model and most of the UI.
 - **Self-registration.** Participants cannot create their own accounts. Only the admin creates accounts. — Rationale: the product is a private friend pool by design; public sign-up is a different product.
-- **Configurable scoring rules.** The scoring rule is hardcoded as 3 / 2 / 1 / 0 (see Business Logic). The admin cannot change it per tournament or per match. — Rationale: configurability adds a domain-modeling burden for zero MVP value.
+- **Configurable scoring rules.** The scoring rule is hardcoded as 5 / 3 / 2 / 0 (see Business Logic). The admin cannot change it per tournament or per match. — Rationale: configurability adds a domain-modeling burden for zero MVP value.
 - **External sports/fixtures integration.** The admin enters every match and every result by hand. No integration with third-party fixture or result providers. — Rationale: every external integration is a 1-week tax on a 3-week project; manual entry is acceptable for one tournament.
 - **Notifications of any kind.** No email, no push, no SMS, no in-app banners reminding participants to predict. — Rationale: no notification infrastructure to build, deliver, or test.
 - **Native mobile app.** The web app must be usable on mobile browsers (made explicit and testable in FR-025), but no iOS/Android native app, no installable home-screen prompt, no platform-specific native UI. — Rationale: scope discipline. Responsive web layout is in scope (FR-025); a native shell is not.
