@@ -181,24 +181,24 @@ Negligible — `score_prediction` stays a pure `immutable` scalar; the views are
 
 #### Automated
 
-- [x] 1.1 Migration applies cleanly: `npm run db:reset`
-- [x] 1.2 Scoring grid passes at new values: `npm test -- results-scoring`
-- [x] 1.3 Lint/type-check clean: `npx astro sync && npm run lint`
-- [x] 1.4 Build passes: `npm run build`
-- [x] 1.5 `check:wrangler` passes: `npm run check:wrangler`
+- [x] 1.1 Migration applies cleanly: `npm run db:reset` — ede801b
+- [x] 1.2 Scoring grid passes at new values: `npm test -- results-scoring` — ede801b
+- [x] 1.3 Lint/type-check clean: `npx astro sync && npm run lint` — ede801b
+- [x] 1.4 Build passes: `npm run build` — ede801b
+- [x] 1.5 `check:wrangler` passes: `npm run check:wrangler` — ede801b
 
 #### Manual
 
-- [x] 1.6 `score_prediction(2,2,1,1)=3` and `(2,1,2,1)=5` confirmed in DB
-- [x] 1.7 `leaderboard.exact_scores` counts only 5-point rows
+- [x] 1.6 `score_prediction(2,2,1,1)=3` and `(2,1,2,1)=5` confirmed in DB — ede801b
+- [x] 1.7 `leaderboard.exact_scores` counts only 5-point rows — ede801b
 
 ### Phase 2: Docs — align PRD + roadmap with 5/3/2/0
 
 #### Automated
 
-- [ ] 2.1 No stale references: `rg -n "3 / 2 / 1|3-point|3 exact|3/2/1"` over `context/foundation` and `src` returns nothing about the old scheme
-- [ ] 2.2 Lint passes: `npm run lint`
+- [x] 2.1 No stale references: `rg -n "3 / 2 / 1|3-point|3 exact|3/2/1"` over `context/foundation` and `src` returns nothing about the old scheme (only the historical `shape-notes.md` discovery record retained by design)
+- [x] 2.2 Lint passes: `npm run lint`
 
 #### Manual
 
-- [ ] 2.3 FR-018/FR-020 + roadmap Q-01 read consistently at 5/3/2/0
+- [x] 2.3 FR-018/FR-020 + roadmap Q-01 read consistently at 5/3/2/0
