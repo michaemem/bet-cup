@@ -313,7 +313,16 @@ export const server = {
 
         const password = generatePassword();
         const { error: updateError } = await admin.auth.admin.updateUserById(input.id, { password });
-        if (updateError) throw internalError(updateError);
+        // The target row vanished between the role read and this write (a
+        // concurrent delete): there is no account to reset and no password to
+        // reveal, so surface the same NOT_FOUND as the zero-roles branch above
+        // rather than a confusing 500. Any other error is an unexpected fault.
+        if (updateError) {
+          if (updateError.code === "user_not_found" || updateError.status === 404) {
+            throw new ActionError({ code: "NOT_FOUND", message: "Participant not found." });
+          }
+          throw internalError(updateError);
+        }
 
         const { error: revokeError } = await admin.rpc("revoke_user_sessions", { target: input.id });
         if (revokeError) throw internalError(revokeError);

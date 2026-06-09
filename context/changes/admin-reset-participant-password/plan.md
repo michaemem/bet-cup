@@ -288,7 +288,7 @@ Negligible at the 5–20-user scale: one indexed `user_roles` read, one `updateU
 
 ## Migration Notes
 
-- **Additive, forward-only.** The migration only adds a function + grants; reverting the Worker does not require reverting it, and it is harmless if left in place. Per AGENTS.md, Supabase migrations are not auto-applied to prod — after merge, apply with `npx supabase db push` (preview with `--dry-run`).
+- **Additive, forward-only — but the Worker is NOT backward-compatible.** The migration only adds a function + grants and is harmless if left in place; reverting the Worker does not require reverting it. **However, `participants.resetPassword` hard-depends on the `revoke_user_sessions` RPC: deploy ordering is a release gate.** Per AGENTS.md, Supabase migrations are not auto-applied to prod (CI runs only `wrangler deploy`). **Apply the migration to prod BEFORE the Worker code that calls the RPC goes live** — `npx supabase db push` (preview with `--dry-run`), confirm with `npx supabase migration list --linked`, then let the Worker deploy. If the Worker ships first, every reset rotates the password then 500s without revealing it (old password dead, sessions live, temp password unseen) → participant locked out until the migration lands and the admin retries.
 - **`auth`-schema coupling.** The function reads GoTrue's `auth.sessions`. If a future GoTrue upgrade changes that table, the function (and the revocation test) is where it surfaces — acceptable for the MVP and pinned by the live test.
 - **No new secret.** Reuses the existing `SUPABASE_SERVICE_ROLE_KEY` (operator step from S-01: `npx wrangler secret put` in prod, local key in `.dev.vars`).
 
