@@ -1,6 +1,7 @@
 ---
 import { DeleteParticipantButton } from "@/components/admin/DeleteParticipantButton";
 import { ParticipantForm } from "@/components/admin/ParticipantForm";
+import { ResetPasswordButton } from "@/components/admin/ResetPasswordButton";
 import Layout from "@/layouts/Layout.astro";
 import { createClient } from "@/lib/supabase";
 
@@ -63,7 +64,8 @@ if (supabase && currentUser) {
                     <span class="text-muted-foreground">Username: </span>
                     <span class="font-mono">{p.username}</span>
                   </div>
-                  <div class="[&_button]:w-full">
+                  <div class="flex flex-col gap-2 [&_button]:w-full">
+                    <ResetPasswordButton client:load id={p.id} displayName={p.displayName} username={p.username} />
                     <DeleteParticipantButton client:load id={p.id} displayName={p.displayName} />
                   </div>
                 </li>
@@ -85,7 +87,10 @@ if (supabase && currentUser) {
                     <td class="py-2">{p.displayName}</td>
                     <td class="py-2 font-mono">{p.username}</td>
                     <td class="py-2 text-right">
-                      <DeleteParticipantButton client:load id={p.id} displayName={p.displayName} />
+                      <div class="flex justify-end gap-2">
+                        <ResetPasswordButton client:load id={p.id} displayName={p.displayName} username={p.username} />
+                        <DeleteParticipantButton client:load id={p.id} displayName={p.displayName} />
+                      </div>
                     </td>
                   </tr>
                 ))}

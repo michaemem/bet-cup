@@ -320,6 +320,7 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       is_participant: { Args: never; Returns: boolean }
       match_is_kicked_off: { Args: { p_match_id: string }; Returns: boolean }
+      revoke_user_sessions: { Args: { target: string }; Returns: undefined }
       score_prediction: {
         Args: { p_away: number; p_home: number; r_away: number; r_home: number }
         Returns: number

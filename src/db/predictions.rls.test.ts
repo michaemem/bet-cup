@@ -427,5 +427,9 @@ describe("service-role isolation (static, no DB)", () => {
     expect(/\.from\(\s*["']predictions["']\s*\)/.test(adminSource)).toBe(false);
     // Stronger guard: the module is auth-only, so it touches no data table at all.
     expect(adminSource.includes(".from(")).toBe(false);
+    // It must not issue RPCs either: the revoke_user_sessions RPC (S-09) is called
+    // from actions/index.ts, NOT this module — keep the admin client auth-only so a
+    // future SECURITY DEFINER call can't quietly turn it into a data-touching path.
+    expect(adminSource.includes(".rpc(")).toBe(false);
   });
 });

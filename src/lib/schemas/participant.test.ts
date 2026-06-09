@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { participantCreateSchema } from "@/lib/schemas/participant";
+import { participantCreateSchema, participantResetPasswordSchema } from "@/lib/schemas/participant";
 
 describe("participantCreateSchema", () => {
   it("accepts a valid name + username and lowercases the username", () => {
@@ -43,5 +43,23 @@ describe("participantCreateSchema", () => {
 
   it("rejects a name longer than 80 characters", () => {
     expect(participantCreateSchema.safeParse({ name: "n".repeat(81), username: "valid" }).success).toBe(false);
+  });
+});
+
+describe("participantResetPasswordSchema", () => {
+  it("accepts a valid uuid", () => {
+    expect(participantResetPasswordSchema.safeParse({ id: "6439ca14-2046-49ba-9326-525450dc9a68" }).success).toBe(true);
+  });
+
+  it("rejects a non-uuid id", () => {
+    expect(participantResetPasswordSchema.safeParse({ id: "not-a-uuid" }).success).toBe(false);
+  });
+
+  it("rejects an empty id", () => {
+    expect(participantResetPasswordSchema.safeParse({ id: "" }).success).toBe(false);
+  });
+
+  it("rejects a missing id", () => {
+    expect(participantResetPasswordSchema.safeParse({}).success).toBe(false);
   });
 });

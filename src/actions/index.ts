@@ -6,7 +6,11 @@ import type { Database } from "@/db/database.types";
 import { changeDisplayNameSchema, changePasswordSchema } from "@/lib/schemas/account";
 import { generatePassword } from "@/lib/password";
 import { matchBulkSchema, matchInputSchema, matchUpdateSchema } from "@/lib/schemas/match";
-import { participantCreateSchema, participantDeleteSchema } from "@/lib/schemas/participant";
+import {
+  participantCreateSchema,
+  participantDeleteSchema,
+  participantResetPasswordSchema,
+} from "@/lib/schemas/participant";
 import { predictionUpsertSchema } from "@/lib/schemas/prediction";
 import { resultUpsertSchema } from "@/lib/schemas/result";
 import { tournamentSchema } from "@/lib/schemas/tournament";
@@ -260,6 +264,70 @@ export const server = {
         }
 
         return { ok: true };
+      },
+    }),
+    /**
+     * Admin-only password reset (FR-024). Order is load-bearing:
+     *   1. Read the target's roles on the RLS SSR client (`adminClient` also
+     *      enforces `requireAdmin`) — NOT the service-role client, keeping that
+     *      client write-only per the FR-015 invariant. Zero rows ⇒ no such user
+     *      ⇒ NOT_FOUND (unlike delete, a reset has nothing to reveal if the
+     *      target is gone). Any `admin` row ⇒ FORBIDDEN — the single admin
+     *      rotates via `/settings` (FR-003), never through this surface.
+     *   2. Set a freshly generated temporary password via the isolated
+     *      service-role client (`updateUserById`).
+     *   3. Revoke the target's existing sessions via the service-role-only
+     *      `revoke_user_sessions` RPC (deletes their `auth.sessions`, cascading
+     *      refresh tokens). MUST come AFTER the password set — never revoke
+     *      against the old password state. If the revoke fails we throw and do
+     *      NOT reveal the password: a half-done reset (old password dead,
+     *      sessions still live, new password unseen) must fail loudly so the
+     *      admin retries (which simply re-rotates). This deliberately differs
+     *      from `account.changePassword`, where the actor keeps their own
+     *      session and a failed `signOut(others)` is logged-and-continued.
+     * The generated password is returned once for out-of-band sharing; it is
+     * never stored or logged.
+     */
+    resetPassword: defineAction({
+      accept: "json",
+      input: participantResetPasswordSchema,
+      handler: async (input, context) => {
+        const supabase = adminClient(context);
+
+        const { data: roles, error: rolesError } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", input.id);
+        if (rolesError) throw internalError(rolesError);
+        if (roles.length === 0) {
+          throw new ActionError({ code: "NOT_FOUND", message: "Participant not found." });
+        }
+        if (roles.some((row) => row.role === "admin")) {
+          throw new ActionError({ code: "FORBIDDEN", message: "You can't reset an admin account's password." });
+        }
+
+        const admin = createAdminAuthClient();
+        if (!admin) {
+          throw new ActionError({ code: "INTERNAL_SERVER_ERROR", message: NOT_CONFIGURED });
+        }
+
+        const password = generatePassword();
+        const { error: updateError } = await admin.auth.admin.updateUserById(input.id, { password });
+        // The target row vanished between the role read and this write (a
+        // concurrent delete): there is no account to reset and no password to
+        // reveal, so surface the same NOT_FOUND as the zero-roles branch above
+        // rather than a confusing 500. Any other error is an unexpected fault.
+        if (updateError) {
+          if (updateError.code === "user_not_found" || updateError.status === 404) {
+            throw new ActionError({ code: "NOT_FOUND", message: "Participant not found." });
+          }
+          throw internalError(updateError);
+        }
+
+        const { error: revokeError } = await admin.rpc("revoke_user_sessions", { target: input.id });
+        if (revokeError) throw internalError(revokeError);
+
+        return { password };
       },
     }),
   },

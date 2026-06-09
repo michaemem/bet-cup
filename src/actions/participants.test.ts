@@ -30,7 +30,11 @@ import { createServerClient, serializeCookieHeader } from "@supabase/ssr";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Database } from "@/db/database.types";
-import { participantCreateSchema, participantDeleteSchema } from "@/lib/schemas/participant";
+import {
+  participantCreateSchema,
+  participantDeleteSchema,
+  participantResetPasswordSchema,
+} from "@/lib/schemas/participant";
 import { synthEmail } from "@/lib/username";
 
 const SUPABASE_URL = process.env.SUPABASE_URL ?? "http://127.0.0.1:54321";
@@ -75,6 +79,13 @@ type DeleteHandler = (input: { id: string }, context: DeleteContext) => Promise<
 
 const deleteHandler = (server.participants.delete as unknown as { handler: DeleteHandler }).handler;
 
+// resetPassword shares delete's context contract: `adminClient(context)` re-checks
+// the admin role on `locals.profile` (UNAUTHORIZED) and reads the target's roles on
+// the RLS SSR client built from the request cookies.
+type ResetHandler = (input: { id: string }, context: DeleteContext) => Promise<{ password: string }>;
+
+const resetHandler = (server.participants.resetPassword as unknown as { handler: ResetHandler }).handler;
+
 /** Invoke the real handler with schema-validated input (mimics Astro's pipeline). */
 async function create(roles: ("admin" | "participant")[], name: string, username: string) {
   const input = participantCreateSchema.parse({ name, username });
@@ -107,6 +118,21 @@ describe("participants.delete admin guard (always runs)", () => {
       deleteHandler(input, {
         locals: { profile: null },
         request: new Request("http://localhost/_actions/participants.delete"),
+        cookies: {},
+      }),
+    ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+  });
+});
+
+describe("participants.resetPassword admin guard (always runs)", () => {
+  it("refuses a non-admin caller with UNAUTHORIZED (before any DB call)", async () => {
+    const input = participantResetPasswordSchema.parse({ id: "00000000-0000-4000-8000-000000000000" });
+    // `requireAdmin` (inside `adminClient`) throws before any client is built or
+    // any password/revoke call is made, so the request/cookies are never touched.
+    await expect(
+      resetHandler(input, {
+        locals: { profile: { roles: ["participant"] } },
+        request: new Request("http://localhost/_actions/participants.resetPassword"),
         cookies: {},
       }),
     ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
@@ -343,5 +369,116 @@ describe.skipIf(!dbConfigured)("participants.delete cascade + guard + idempotenc
     expect(await deleteHandler(participantDeleteSchema.parse({ id }), context)).toEqual({ ok: true });
     // Second delete of the now-removed id: zero role rows ⇒ early idempotent `{ ok: true }`.
     expect(await deleteHandler(participantDeleteSchema.parse({ id }), context)).toEqual({ ok: true });
+  });
+});
+
+describe.skipIf(!dbConfigured)("participants.resetPassword set-temp + revoke (live DB)", () => {
+  let service: SupabaseClient<Database>;
+  const createdUsernames: string[] = [];
+
+  function anonClient() {
+    return createClient<Database>(SUPABASE_URL, ANON_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+  }
+
+  beforeAll(() => {
+    service = createClient<Database>(SUPABASE_URL, SERVICE_ROLE_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+  });
+
+  afterAll(async () => {
+    for (const username of createdUsernames) {
+      const { data } = await service.from("profiles").select("id").eq("username", username).maybeSingle();
+      if (data?.id) await service.auth.admin.deleteUser(data.id);
+    }
+  });
+
+  // Same admin-session construction as the delete suite: sign in on an SSR client
+  // backed by an in-memory jar and serialize it into a `Cookie` header, so the
+  // handler's `adminClient` reads a genuine admin RLS session for the role check.
+  async function adminContext(): Promise<{ context: DeleteContext; adminId: string }> {
+    const jar = new Map<string, string>();
+    const authClient = createServerClient<Database>(SUPABASE_URL, ANON_KEY, {
+      cookies: {
+        getAll: () => [...jar.entries()].map(([name, value]) => ({ name, value })),
+        setAll: (toSet) => {
+          toSet.forEach(({ name, value }) => jar.set(name, value));
+        },
+      },
+    });
+    const { data, error } = await authClient.auth.signInWithPassword({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD });
+    if (error) throw error;
+
+    const cookieHeader = [...jar.entries()].map(([name, value]) => serializeCookieHeader(name, value)).join("; ");
+    const request = {
+      headers: { get: (name: string) => (name.toLowerCase() === "cookie" ? cookieHeader : null) },
+    } as unknown as Request;
+
+    return {
+      context: { locals: { profile: { roles: ["admin"] } }, request, cookies: cookieStub() },
+      adminId: data.user.id,
+    };
+  }
+
+  /** Create a participant via the real `create` Action; return id + initial password. */
+  async function createParticipant(name: string, username: string): Promise<{ id: string; password: string }> {
+    const created = await create(["admin", "participant"], name, username);
+    createdUsernames.push(username);
+    const { data, error } = await service.from("profiles").select("id").eq("username", username).single();
+    if (error) throw error;
+    return { id: data.id, password: created.password };
+  }
+
+  it("refuses to reset an admin-role target with FORBIDDEN and leaves the admin intact", async () => {
+    const { context, adminId } = await adminContext();
+    await expect(resetHandler(participantResetPasswordSchema.parse({ id: adminId }), context)).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    // The admin can still sign in with the original password — nothing was rotated.
+    const { error } = await anonClient().auth.signInWithPassword({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD });
+    expect(error).toBeNull();
+  });
+
+  it("rotates to a fresh temp password: the old one stops working and the temp signs in", async () => {
+    const username = `itest_reset_${Date.now().toString()}`;
+    const { id, password: oldPassword } = await createParticipant("Rita Reset", username);
+    const email = synthEmail(username);
+
+    // Precondition: the original password works.
+    const before = await anonClient().auth.signInWithPassword({ email, password: oldPassword });
+    expect(before.error).toBeNull();
+
+    const { context } = await adminContext();
+    const { password: tempPassword } = await resetHandler(participantResetPasswordSchema.parse({ id }), context);
+    expect(tempPassword.length).toBeGreaterThanOrEqual(12);
+    expect(tempPassword).not.toBe(oldPassword);
+
+    // Old password is dead; the returned temp password works.
+    const oldAfter = await anonClient().auth.signInWithPassword({ email, password: oldPassword });
+    expect(oldAfter.error).not.toBeNull();
+    const tempSignIn = await anonClient().auth.signInWithPassword({ email, password: tempPassword });
+    expect(tempSignIn.error).toBeNull();
+  });
+
+  it("revokes the participant's existing sessions (a pre-reset refresh token can no longer be exchanged)", async () => {
+    const username = `itest_rrv_${Date.now().toString()}`;
+    const { id, password: oldPassword } = await createParticipant("Reva Revoke", username);
+    const email = synthEmail(username);
+
+    // A "device" session minted before the reset.
+    const deviceSignIn = await anonClient().auth.signInWithPassword({ email, password: oldPassword });
+    expect(deviceSignIn.error).toBeNull();
+    const refreshToken = deviceSignIn.data.session?.refresh_token ?? "";
+    expect(refreshToken).not.toBe("");
+
+    const { context } = await adminContext();
+    await resetHandler(participantResetPasswordSchema.parse({ id }), context);
+
+    // FR-024: the reset wiped the target's auth.sessions, so the pre-reset refresh
+    // token cannot be exchanged for a new access token.
+    const refreshed = await anonClient().auth.refreshSession({ refresh_token: refreshToken });
+    expect(refreshed.error).not.toBeNull();
   });
 });
