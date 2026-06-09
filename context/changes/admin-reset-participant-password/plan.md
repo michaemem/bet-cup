@@ -325,30 +325,30 @@ Negligible at the 5–20-user scale: one indexed `user_roles` read, one `updateU
 
 #### Automated
 
-- [x] 2.1 Lint/type-check clean: `npx astro sync && npm run lint`
-- [x] 2.2 Build passes: `npm run build`
-- [x] 2.3 `check:wrangler` passes: `npm run check:wrangler`
-- [x] 2.4 Unit tests pass: `npm test` (participant-schema suite incl. new reset cases)
-- [x] 2.5 Isolation guard green: one reader / one importer (`npm test`)
+- [x] 2.1 Lint/type-check clean: `npx astro sync && npm run lint` — d536bc7
+- [x] 2.2 Build passes: `npm run build` — d536bc7
+- [x] 2.3 `check:wrangler` passes: `npm run check:wrangler` — d536bc7
+- [x] 2.4 Unit tests pass: `npm test` (participant-schema suite incl. new reset cases) — d536bc7
+- [x] 2.5 Isolation guard green: one reader / one importer (`npm test`) — d536bc7
 
 #### Manual
 
-- [x] 2.6 Action reachable with the local service-role key; returns generic not-configured error without it (no crash)
+- [x] 2.6 Action reachable with the local service-role key; returns generic not-configured error without it (no crash) — d536bc7
 
 ### Phase 3: UI layer — per-row `ResetPasswordButton` island
 
 #### Automated
 
-- [ ] 3.1 Lint/type-check clean: `npx astro sync && npm run lint`
-- [ ] 3.2 Build passes: `npm run build`
-- [ ] 3.3 `check:wrangler` passes
+- [x] 3.1 Lint/type-check clean: `npx astro sync && npm run lint`
+- [x] 3.2 Build passes: `npm run build`
+- [x] 3.3 `check:wrangler` passes
 
 #### Manual
 
-- [ ] 3.4 Each row shows "Reset password" beside "Delete"
-- [ ] 3.5 Confirm dialog warns about invalidation; confirming reveals a temp password with working Copy; list does NOT reload until "Done"
-- [ ] 3.6 A reset error keeps the dialog open with a message
-- [ ] 3.7 Correct layout on mobile card list + desktop table, no horizontal overflow
+- [x] 3.4 Each row shows "Reset password" beside "Delete" (verified in SSR markup: per-row outline trigger before destructive Delete, both layouts)
+- [x] 3.5 Confirm dialog warns about invalidation; confirming reveals a temp password with working Copy; list does NOT reload until "Done" (user-confirmed in browser)
+- [x] 3.6 A reset error keeps the dialog open with a message (user-confirmed in browser)
+- [x] 3.7 Correct layout on mobile card list + desktop table, no horizontal overflow (user-confirmed in browser)
 
 ### Phase 4: Integration tests + isolation guard
 
