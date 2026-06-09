@@ -354,11 +354,11 @@ Negligible at the 5–20-user scale: one indexed `user_roles` read, one `updateU
 
 #### Automated
 
-- [x] 4.1 `npm test` stays green in CI (guard + admin-target-refusal + schema run; live reset suite skips cleanly; isolation guard green) — 78 passed / 66 skipped
-- [x] 4.2 `npm test -- participants` passes locally with all `SUPABASE_*` set (old-fails/temp-works/refresh-revoked + admin-target refusal) — 13 passed
-- [x] 4.3 Lint + build still pass
+- [x] 4.1 `npm test` stays green in CI (guard + admin-target-refusal + schema run; live reset suite skips cleanly; isolation guard green) — 78 passed / 66 skipped — 132ee6b
+- [x] 4.2 `npm test -- participants` passes locally with all `SUPABASE_*` set (old-fails/temp-works/refresh-revoked + admin-target refusal) — 13 passed — 132ee6b
+- [x] 4.3 Lint + build still pass — 132ee6b
 
 #### Manual
 
-- [x] 4.4 Full loop: reset `bob` → old password fails → temp works → `bob` changes it on `/settings` (user-confirmed in browser)
-- [x] 4.5 Live revocation test stable across a couple of reruns (3× consecutive: 13 passed each)
+- [x] 4.4 Full loop: reset `bob` → old password fails → temp works → `bob` changes it on `/settings` (user-confirmed in browser) — 132ee6b
+- [x] 4.5 Live revocation test stable across a couple of reruns (3× consecutive: 13 passed each) — 132ee6b
