@@ -1,7 +1,7 @@
 ---
 change_id: scoring-points-rebalance
 title: Rebalance per-match scoring to 5/3/2/0 (wider exact-score reward)
-status: implemented
+status: impl_reviewed
 created: 2026-06-09
 updated: 2026-06-09
 archived_at: null
