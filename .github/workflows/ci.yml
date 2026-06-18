@@ -97,7 +97,13 @@ jobs:
       - run: npm ci
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Pinned: `latest` (>= v2.107.0) defaults the local stack to asymmetric
+          # ES256 JWT signing keys, which the RLS test harness' authenticated
+          # requests don't carry — PostgREST falls back to `anon`, so every
+          # admin-only write fails with `permission denied for table ...`.
+          # 2.98.2 uses the legacy HS256 shared secret these tests rely on.
+          # Lift this pin only once the suites support ES256 keys.
+          version: 2.98.2
       - name: Generate local seed (admin user) from the template
         run: node scripts/seed-template.mjs
       - name: Start Supabase (applies migrations + seed)

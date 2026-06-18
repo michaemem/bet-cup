@@ -3,6 +3,28 @@
 > Framing step before /10x-plan. This document captures what is _actually_
 > at issue, separated from what was initially assumed.
 
+> ## ⚠️ Correction (post-implementation, 2026-06-18)
+>
+> **This frame's reframed root cause was WRONG.** It concluded the failure was
+> fragile admin-seed promotion (a session-GUC→trigger coupling). Local
+> reproduction under CLI v2.107.0 during implementation disproved it:
+>
+> - After seeding under v2.107.0, the admin **does** hold the `admin` role — the
+>   trigger promotion works. The seed was never the problem.
+> - The real cause: v2.107.0 defaults the local stack to **asymmetric ES256 JWT
+>   signing keys**. The RLS harness' authenticated requests are not honored under
+>   that scheme → PostgREST runs them as `anon` → Postgres 42501
+>   `permission denied for table tournaments`. Clean version bisect: 2.98.2 →
+>   57/57 pass, 2.107.0 → 4 suites fail.
+> - Fix: **pin the CLI to 2.98.2** (HS256). The seed experiment was reverted.
+>
+> **Why the frame missed it**: the Hypothesis Investigation reasoned from the
+> symptom and the codebase's sole-promotion-path structure but never reproduced
+> against the breaking CLI. Guardrail #5 ("read/reproduce before reaching for
+> priors") would have caught this — the decisive evidence (the JWT `alg` header +
+> the role actually present in `user_roles`) only appeared on live reproduction.
+> The original (incorrect) analysis is preserved verbatim below for the record.
+
 ## Reported Observation
 
 The `rls` CI job fails (PR #24) with `permission denied for table tournaments`
