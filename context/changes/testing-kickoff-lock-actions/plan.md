@@ -275,11 +275,11 @@ None — test-only change. No schema, RLS, or production code changes.
 
 #### Automated
 
-- [x] 2.1 Live-DB suite incl. new boundary case passes: `npm test -- rls` (Node 22)
-- [x] 2.2 Default suite still green with no DB: `npm test`
-- [x] 2.3 Lint passes: `npm run lint`
+- [x] 2.1 Live-DB suite incl. new boundary case passes: `npm test -- rls` (Node 22) — 95b0e3c
+- [x] 2.2 Default suite still green with no DB: `npm test` — 95b0e3c
+- [x] 2.3 Lint passes: `npm run lint` — 95b0e3c
 
 #### Manual
 
-- [x] 2.4 Boundary case observed crossing kickoff (polls, then write locked), not trivially passing
-- [x] 2.5 §6.3 reads as a usable recipe for a future contributor
+- [x] 2.4 Boundary case observed crossing kickoff (polls, then write locked), not trivially passing — 95b0e3c
+- [x] 2.5 §6.3 reads as a usable recipe for a future contributor — 95b0e3c
