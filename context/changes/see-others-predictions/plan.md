@@ -227,28 +227,28 @@ None — no schema or data changes.
 
 #### Automated
 
-- [x] 1.1 Type checking passes: `npm run build`
-- [x] 1.2 Linting passes: `npm run lint`
-- [x] 1.3 Unit tests pass: `npm run test`
+- [x] 1.1 Type checking passes: `npm run build` — 6ed3345
+- [x] 1.2 Linting passes: `npm run lint` — 6ed3345
+- [x] 1.3 Unit tests pass: `npm run test` — 6ed3345
 
 #### Manual
 
-- [x] 1.4 buildMatchPredictionRows output ordering matches leaderboard order for a hand-checked fixture
+- [x] 1.4 buildMatchPredictionRows output ordering matches leaderboard order for a hand-checked fixture — 6ed3345
 
 ### Phase 2: UI (dialog + wiring)
 
 #### Automated
 
-- [ ] 2.1 Type checking passes: `npm run build`
-- [ ] 2.2 Linting passes: `npm run lint`
-- [ ] 2.3 Unit tests still pass: `npm run test`
+- [x] 2.1 Type checking passes: `npm run build`
+- [x] 2.2 Linting passes: `npm run lint`
+- [x] 2.3 Unit tests still pass: `npm run test`
 
 #### Manual
 
-- [ ] 2.4 Locked match: button + dialog list in leaderboard order, predictions or "—", own row marked, no points column
-- [ ] 2.5 Resulted match: dialog shows result + points column (non-predictors 0)
-- [ ] 2.6 Future match shows no button / no other-participant data
-- [ ] 2.7 No horizontal overflow on phone width; dialog dismissible
+- [x] 2.4 Locked match: button + dialog list in leaderboard order, predictions or "—", own row marked, no points column
+- [x] 2.5 Resulted match: dialog shows result + points column (non-predictors 0)
+- [x] 2.6 Future match shows no button / no other-participant data
+- [x] 2.7 No horizontal overflow on phone width; dialog dismissible
 
 ### Phase 3: RLS integration test
 
