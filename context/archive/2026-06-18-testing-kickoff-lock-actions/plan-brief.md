@@ -9,7 +9,7 @@ Phase 3 of the test rollout. The kickoff write-lock (Risk #4) and ownership
 (Risk #3) invariants are enforced and tested at the DB/RLS layer, but the Astro
 Action `predictions.upsert` that sits on top of them is untested. We add
 action-layer integration tests for it, and close the one DB gap where the kickoff
-*boundary* was only proven for read-blindness, not for a write.
+_boundary_ was only proven for read-blindness, not for a write.
 
 ## Starting Point
 
@@ -29,14 +29,14 @@ the local stack. Test-plan §6.3/§6.6 documented; §3 Phase 3 marked `complete`
 
 ## Key Decisions Made
 
-| Decision | Choice | Why (1 sentence) | Source |
-| --- | --- | --- | --- |
-| Scope | `predictions.upsert` only; no `results.test.ts` changes | Result entry/correction already covered by `results-scoring.rls.test.ts`; re-asserting adds no signal | Plan |
-| Risk #3 at action layer | Assert caller-scoping, not spoof-rejection | Schema has no owner field — spoofing is structurally impossible; spoof test lives at DB layer | Research |
+| Decision                 | Choice                                                         | Why (1 sentence)                                                                                                | Source   |
+| ------------------------ | -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | -------- |
+| Scope                    | `predictions.upsert` only; no `results.test.ts` changes        | Result entry/correction already covered by `results-scoring.rls.test.ts`; re-asserting adds no signal           | Plan     |
+| Risk #3 at action layer  | Assert caller-scoping, not spoof-rejection                     | Schema has no owner field — spoofing is structurally impossible; spoof test lives at DB layer                   | Research |
 | Risk #4 assertion target | Handler translation (NOT_FOUND vs FORBIDDEN), not the DB clock | Authoritative lock is Postgres `now()` via RLS, already DB-tested; action adds the message/zero-row translation | Research |
-| DB boundary gap | Close it — add one write-flip case | Boundary was only proven for SELECT; a write-flip is cheap and closes the gap | Plan |
-| Assertion depth | Error code + which branch fired; not exact message strings | Messages are UX not contract; branch discrimination is the action layer's value | Plan |
-| Test environment | Stay on global `happy-dom`, no node pragma | supabase-js 2.105.3 throws on client init under node env (known §6.6 bug) | Research |
+| DB boundary gap          | Close it — add one write-flip case                             | Boundary was only proven for SELECT; a write-flip is cheap and closes the gap                                   | Plan     |
+| Assertion depth          | Error code + which branch fired; not exact message strings     | Messages are UX not contract; branch discrimination is the action layer's value                                 | Plan     |
+| Test environment         | Stay on global `happy-dom`, no node pragma                     | supabase-js 2.105.3 throws on client init under node env (known §6.6 bug)                                       | Research |
 
 ## Scope
 
@@ -60,10 +60,10 @@ context. Fixtures (participants A/B, future + past match) follow the
 
 ## Phases at a Glance
 
-| Phase | What it delivers | Key risk |
-| --- | --- | --- |
-| 1. Action-layer tests | `src/actions/predictions.test.ts` (guard + live-DB core set) | Cookie-jar/happy-dom session wiring must match `account.test.ts` exactly |
-| 2. DB boundary + cookbook | Near-boundary write-flip case; §6.3/§6.6 + §3 status | Timing flake — must poll until kickoff, never a fixed sleep |
+| Phase                     | What it delivers                                             | Key risk                                                                 |
+| ------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------ |
+| 1. Action-layer tests     | `src/actions/predictions.test.ts` (guard + live-DB core set) | Cookie-jar/happy-dom session wiring must match `account.test.ts` exactly |
+| 2. DB boundary + cookbook | Near-boundary write-flip case; §6.3/§6.6 + §3 status         | Timing flake — must poll until kickoff, never a fixed sleep              |
 
 **Prerequisites:** local Supabase stack (`npx supabase start`) and Node 22 for the
 live-DB lanes; the four `SUPABASE_*` env vars.

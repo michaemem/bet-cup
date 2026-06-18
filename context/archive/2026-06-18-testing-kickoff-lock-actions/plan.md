@@ -5,7 +5,7 @@
 Add the missing **action-layer** integration tests for `predictions.upsert` —
 the kickoff write-lock (Risk #4) and ownership (Risk #3) surface that the DB/RLS
 layer already enforces but the Astro Action layer does not yet test — and close
-the one DB-layer gap where the kickoff *boundary* is only proven for SELECT
+the one DB-layer gap where the kickoff _boundary_ is only proven for SELECT
 blindness, not for a write. Follows the established two-lane action-test harness
 (`src/actions/participants.test.ts`, `account.test.ts`) and stays on the global
 `happy-dom` env.
@@ -28,7 +28,7 @@ blindness, not for a write. Follows the established two-lane action-test harness
   rejection (`predictions.rls.test.ts:203-224`), cross-owner UPDATE/DELETE
   (`:261-303`). The near-boundary test (`:328-372`) polls until Postgres `now()`
   crosses kickoff but asserts **only the SELECT blindness flip** — it does not
-  assert that a *write* is rejected once the boundary is crossed.
+  assert that a _write_ is rejected once the boundary is crossed.
 - **Harness**: single `vitest.config.ts` (global `happy-dom`, `:9-25`); `astro:*`
   virtual modules aliased to `test/stubs/*` (`defineAction` is identity →
   `.handler` reachable). No shared test helper module — each file inlines
@@ -110,6 +110,7 @@ and that a participant can only ever write their own row. Two lanes so the
 unauthorized guard runs in the default DB-free CI gate.
 
 **Contract**:
+
 - File header docblock mirroring `results.test.ts:1-11` (FR refs FR-011–FR-014,
   two-lane strategy, local live-DB run env). **No `@vitest-environment` pragma**
   (stay on global happy-dom).
@@ -121,7 +122,7 @@ unauthorized guard runs in the default DB-free CI gate.
   the handler with `locals.user` absent rejects with code `UNAUTHORIZED` before any
   DB call (the `sessionClient` guard, `index.ts:96-98`).
 - **Live-DB lane** — `describe.skipIf(!dbConfigured)(…)` with `dbConfigured =
-  Boolean(process.env.SUPABASE_DB_URL && ANON_KEY && SERVICE_ROLE_KEY)`. Inline
+Boolean(process.env.SUPABASE_DB_URL && ANON_KEY && SERVICE_ROLE_KEY)`. Inline
   `cookieStub()` and an `authedContext(email,password)` builder copied from
   `account.test.ts:68-152` (cookie-jar sign-in via `@supabase/ssr`
   `createServerClient`; plain `{ headers: { get } }` stub so happy-dom doesn't strip
@@ -178,7 +179,7 @@ outcome in the test-plan.
 
 **File**: `src/db/predictions.rls.test.ts`
 
-**Intent**: Prove the kickoff write-lock flips at the *exact* boundary — a create
+**Intent**: Prove the kickoff write-lock flips at the _exact_ boundary — a create
 that succeeds pre-kickoff is rejected once Postgres `now()` crosses kickoff —
 complementing the existing SELECT-flip case.
 
@@ -199,6 +200,7 @@ not assert Postgres `error.code`.
 `complete`.
 
 **Contract**:
+
 - §6.3: replace the TBD with the two-lane action-test recipe (handler-via-import,
   schema `.parse`, always-runs guard + `skipIf(!dbConfigured)` live-DB, inlined
   `authedContext`/`cookieStub`, happy-dom only), referencing

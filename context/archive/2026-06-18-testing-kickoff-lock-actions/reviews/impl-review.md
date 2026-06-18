@@ -1,4 +1,5 @@
 <!-- IMPL-REVIEW-REPORT -->
+
 # Implementation Review: Kickoff-lock & action-layer mutation tests (test-plan Phase 3)
 
 - **Plan**: context/changes/testing-kickoff-lock-actions/plan.md
@@ -9,16 +10,17 @@
 
 ## Verdicts
 
-| Dimension | Verdict |
-|-----------|---------|
-| Plan Adherence | PASS |
-| Scope Discipline | PASS |
-| Safety & Quality | PASS |
-| Architecture | PASS |
-| Pattern Consistency | PASS |
-| Success Criteria | PASS |
+| Dimension           | Verdict |
+| ------------------- | ------- |
+| Plan Adherence      | PASS    |
+| Scope Discipline    | PASS    |
+| Safety & Quality    | PASS    |
+| Architecture        | PASS    |
+| Pattern Consistency | PASS    |
+| Success Criteria    | PASS    |
 
 Automated criteria re-confirmed this session:
+
 - `npm run lint` → 0 errors
 - `npm test` (no DB) → 79 passed, live lanes self-skip
 - `npm test -- rls` (live local Supabase, Node 22.14.0) → 57 passed (predictions.rls now 19, incl. the new write-flip)

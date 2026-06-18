@@ -37,7 +37,7 @@ Phase 3 gap, and flag speculative risks or misleading evidence.
 ## Summary
 
 **The Phase 3 gap is the action layer, and it is thin.** Both Risk #4 and Risk
-#3 are already enforced *and tested at the DB/RLS layer* by Phase 2's
+#3 are already enforced _and tested at the DB/RLS layer_ by Phase 2's
 `src/db/predictions.rls.test.ts` (spoofed-owner INSERT, cross-owner UPDATE/DELETE,
 post-kickoff INSERT/UPDATE rejection, near-boundary crossing). What is **not**
 covered is the Astro Action `predictions.upsert` (`src/actions/index.ts:503-543`),
@@ -59,12 +59,12 @@ candidates):
 
 2. **Risk #4 "server clock" is two clocks, and the action's own pre-check clock
    is not the authoritative one.** The action's app-layer pre-check uses Node
-   `Date.now()` (`src/actions/index.ts:520`) for a *friendly early message*; the
+   `Date.now()` (`src/actions/index.ts:520`) for a _friendly early message_; the
    race-proof, authoritative lock is the Postgres `now()` inside
    `match_is_kicked_off()` enforced by RLS (`...predictions_with_blindness.sql:69`,
    `:86`, `:91-92`), surfaced to the handler as a zero-row result →
    `FORBIDDEN`/`PREDICTION_LOCKED` (`src/actions/index.ts:540`). Neither clock is
-   the *client's*. The cheapest action-layer test should assert the handler's
+   the _client's_. The cheapest action-layer test should assert the handler's
    translation of both the pre-check (NOT_FOUND vs PREDICTION_LOCKED) and the
    RLS zero-row guard, not re-prove the DB lock.
 
@@ -86,7 +86,7 @@ avoid the known supabase-js WebSocket failure (§ Open Questions / test-plan §6
   documented intent.
 - Owner is derived: `predictor_id: user.id` (`index.ts:528`), with
   `onConflict: "predictor_id,match_id"` (`index.ts:533`). The caller can only ever
-  upsert *their own* (predictor, match) row.
+  upsert _their own_ (predictor, match) row.
 - Kickoff lock is defense-in-depth:
   - app-layer pre-check reads `kickoff_time` and compares to `Date.now()`
     (`index.ts:511-522`); distinguishes `NOT_FOUND` (no such match,
@@ -104,7 +104,7 @@ result entry + correction recompute):
 - `matches.update` — admin-only edit, refused post-kickoff via app pre-check
   (`index.ts:468-473`) + RLS zero-row (`index.ts:486-488`).
 - `results.upsert` — admin-only, mirror guard: a result may only be written
-  *after* kickoff (`index.ts:576-578` app pre-check; `index.ts:593-595` RLS
+  _after_ kickoff (`index.ts:576-578` app pre-check; `index.ts:593-595` RLS
   zero-row). Correction is an upsert on unique `match_id`, so scoring/leaderboard
   recompute on next read (`index.ts:545-556`).
 
@@ -123,19 +123,19 @@ result entry + correction recompute):
 - `matches` UPDATE RLS: `using (is_admin() and kickoff_time > now())`
   (`supabase/migrations/20260602180000_tournament_and_matches.sql:103-107`).
 - `is_admin()` — `stable security definer`, checks `user_roles` for `auth.uid()`
-  + `role = 'admin'` (`supabase/migrations/20260528232000_identity_boundary.sql:88-93`).
+  - `role = 'admin'` (`supabase/migrations/20260528232000_identity_boundary.sql:88-93`).
 
 ### Coverage map — already covered vs Phase 3 gap
 
-| Invariant | DB enforcement | DB test (exists) | Action test (Phase 3 target) |
-|-----------|----------------|------------------|------------------------------|
-| Kickoff lock #4 (post-kickoff INSERT) | predictions INSERT `not match_is_kicked_off` | `predictions.rls.test.ts:203-211` | **gap** — no `predictions.test.ts` |
-| Kickoff lock #4 (post-kickoff UPDATE) | predictions UPDATE USING | `predictions.rls.test.ts:213-224` | **gap** |
-| Kickoff lock #4 (near-boundary) | Postgres `now()` per row | `predictions.rls.test.ts:328-372` (SELECT flip only) | **gap** (and DB write-at-boundary not covered either) |
-| Ownership #3 (spoofed INSERT) | INSERT `predictor_id = auth.uid()` | `predictions.rls.test.ts:251-259` | **N/A at action** — no owner channel in schema |
-| Ownership #3 (cross-owner UPDATE/DELETE) | UPDATE USING / no DELETE policy | `predictions.rls.test.ts:261-303` | **gap** — assert action upsert is caller-scoped |
-| Unauthenticated write | session required | — | **gap** — always-runs `UNAUTHORIZED` lane |
-| Admin result entry / correction | `match_results` RLS | `results-scoring.rls.test.ts:377-414` | `results.test.ts` admin-guard only (`:46-60`) |
+| Invariant                                | DB enforcement                               | DB test (exists)                                     | Action test (Phase 3 target)                          |
+| ---------------------------------------- | -------------------------------------------- | ---------------------------------------------------- | ----------------------------------------------------- |
+| Kickoff lock #4 (post-kickoff INSERT)    | predictions INSERT `not match_is_kicked_off` | `predictions.rls.test.ts:203-211`                    | **gap** — no `predictions.test.ts`                    |
+| Kickoff lock #4 (post-kickoff UPDATE)    | predictions UPDATE USING                     | `predictions.rls.test.ts:213-224`                    | **gap**                                               |
+| Kickoff lock #4 (near-boundary)          | Postgres `now()` per row                     | `predictions.rls.test.ts:328-372` (SELECT flip only) | **gap** (and DB write-at-boundary not covered either) |
+| Ownership #3 (spoofed INSERT)            | INSERT `predictor_id = auth.uid()`           | `predictions.rls.test.ts:251-259`                    | **N/A at action** — no owner channel in schema        |
+| Ownership #3 (cross-owner UPDATE/DELETE) | UPDATE USING / no DELETE policy              | `predictions.rls.test.ts:261-303`                    | **gap** — assert action upsert is caller-scoped       |
+| Unauthenticated write                    | session required                             | —                                                    | **gap** — always-runs `UNAUTHORIZED` lane             |
+| Admin result entry / correction          | `match_results` RLS                          | `results-scoring.rls.test.ts:377-414`                | `results.test.ts` admin-guard only (`:46-60`)         |
 
 ### Test harness blueprint (from existing action tests)
 
@@ -159,8 +159,8 @@ result entry + correction recompute):
   plain `{ headers: { get } }` stub returning the serialized cookie jar
   (`account.test.ts:140-143`).
 - Run: `npm test` (live lanes self-skip); live-DB locally needs `npx supabase start`
-  + the four `SUPABASE_*` env vars; CI `rls` job runs `npm test -- rls`
-  (`.github/workflows/ci.yml`).
+  - the four `SUPABASE_*` env vars; CI `rls` job runs `npm test -- rls`
+    (`.github/workflows/ci.yml`).
 
 ### Reusable live-DB fixtures (Phase 2, `predictions.rls.test.ts`)
 
@@ -169,7 +169,7 @@ participantB clients, a tournament, `futureMatchId` + `pastMatchId(2)`, A's
 future-match prediction (via participant session) and a past-match prediction
 (via service-role, bypassing the post-kickoff INSERT lock). `seedMatch` runs on the
 admin session (`:134-143`); teardown cascades the tournament + deletes auth users
-(`:128-132`). These are *in `src/db/`*, not importable — the Phase 3 action file will
+(`:128-132`). These are _in `src/db/`_, not importable — the Phase 3 action file will
 inline equivalent setup (admin-created participants A/B, a future and a soon/past
 match), reusing the idioms not the code.
 
@@ -194,17 +194,17 @@ match), reusing the idioms not the code.
 
 These adjust the Source/response cells only — no file anchors added to §2.
 
-1. **Risk #3 response guidance** — current text: *"the server rejects a spoofed
-   owner id and trusts only the session identity."* At the **action layer** there
+1. **Risk #3 response guidance** — current text: _"the server rejects a spoofed
+   owner id and trusts only the session identity."_ At the **action layer** there
    is no owner input to spoof (`predictionUpsertSchema` has no such field;
    `predictor_id` is derived from the session). Reframe the action-layer
-   expectation to *"the action exposes no owner channel; `predictor_id` is the
-   session identity and the upsert is scoped to the caller's own row."* The
+   expectation to _"the action exposes no owner channel; `predictor_id` is the
+   session identity and the upsert is scoped to the caller's own row."_ The
    "rejects a spoofed owner id" expectation remains valid but belongs to the DB
    layer (already covered, `predictions.rls.test.ts:251-259`).
 
-2. **Risk #4 response guidance** — current text: *"the cutoff uses the server
-   clock, not the client's."* Accurate but ambiguous: the action's *own* pre-check
+2. **Risk #4 response guidance** — current text: _"the cutoff uses the server
+   clock, not the client's."_ Accurate but ambiguous: the action's _own_ pre-check
    uses Node `Date.now()` (advisory, friendly message); the authoritative lock is
    Postgres `now()` via RLS, surfaced as a zero-row → `FORBIDDEN`. The action test
    should assert the **handler's translation** (NOT_FOUND vs PREDICTION_LOCKED, and
@@ -239,11 +239,11 @@ Phase 1's manual step 1.5 (pre-check temporarily commented out, live stack):
 - **Backport actions for Phase 2**: (a) correct §6.6 / the action-test convention
   note to say "the race-proof predictions lock is a `WITH CHECK` rejection
   (surfaced generic), and `FORBIDDEN` on the happy path comes from the app
-  pre-check"; (b) candidate `lessons.md` entry: *"`upsert({ onConflict })` is an
+  pre-check"; (b) candidate `lessons.md` entry: _"`upsert({ onConflict })` is an
   `INSERT ON CONFLICT` — the INSERT `WITH CHECK` fires before conflict resolution,
   so a policy-violating upsert raises `42501` (mapped to `INTERNAL_SERVER_ERROR`),
   it does NOT fall through to a zero-row result. Reserve the `data.length === 0 →
-  FORBIDDEN` pattern for plain `.update()` paths (e.g. `matches.update`)."*
+FORBIDDEN` pattern for plain `.update()` paths (e.g. `matches.update`)."_
 - Not a code/test defect: with the pre-check in place every post-kickoff case
   correctly returns `FORBIDDEN` and the Phase 1 tests are green.
 
@@ -251,10 +251,10 @@ Phase 1's manual step 1.5 (pre-check temporarily commented out, live stack):
 
 - **Defense-in-depth is the house style**: every mutating handler pairs an
   app-layer pre-check (friendly, early, non-authoritative) with the RLS zero-row
-  guard (race-proof, authoritative). Tests should target the *translation* the
+  guard (race-proof, authoritative). Tests should target the _translation_ the
   handler adds, and leave the raw policy to the RLS suite.
 - **Owner identity is never client-trusted** — it is read from `locals.user`/
-  `auth.uid()`. IDOR resistance at the action layer is *structural* (no input
+  `auth.uid()`. IDOR resistance at the action layer is _structural_ (no input
   field), which is a stronger statement than "rejected if spoofed."
 - **Two-lane test discipline** keeps the default CI gate DB-free; live-DB lanes
   self-skip and only run in the dedicated `rls` job or locally with the stack up.
