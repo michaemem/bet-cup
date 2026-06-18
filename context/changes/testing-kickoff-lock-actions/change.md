@@ -1,7 +1,7 @@
 ---
 change_id: testing-kickoff-lock-actions
 title: Kickoff-lock & action-layer mutation tests (test-plan Phase 3)
-status: new
+status: implementing
 created: 2026-06-18
 updated: 2026-06-18
 archived_at: null
