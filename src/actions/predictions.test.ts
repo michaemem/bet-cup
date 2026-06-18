@@ -13,7 +13,7 @@
  *     call), so it stays in the default `npm test` / CI gate with no Supabase;
  *   - a live-DB lane (`describe.skipIf(!dbConfigured)`) proving the action's own
  *     translation on top of RLS: the friendly NOT_FOUND vs FORBIDDEN
- *     discrimination, the zero-row→FORBIDDEN kickoff lock, and that a participant
+ *     discrimination, the post-kickoff FORBIDDEN lock, and that a participant
  *     can only ever write their OWN row (#3 — ownership is structural; the input
  *     schema has no owner channel, so `predictor_id` is always the session
  *     identity). It does NOT re-prove the raw RLS policies — those are pinned by
@@ -251,6 +251,11 @@ describe.skipIf(!dbConfigured)("predictions.upsert (live DB)", () => {
     expect(data?.[0]).toMatchObject({ id: edited.id, home_goals: 3, away_goals: 0 });
   });
 
+  // The past matches kicked off an hour ago, so the action's app-layer
+  // `Date.now()` pre-check (index.ts:520-522) is what fires here → FORBIDDEN.
+  // The RLS zero-row guard (index.ts:540) is the race-proof backstop for a write
+  // that slips past the pre-check at the exact boundary; that branch is proven at
+  // the DB layer by the near-boundary write-flip in `predictions.rls.test.ts`.
   it("rejects a CREATE after kickoff with FORBIDDEN (the lock branch)", async () => {
     await expect(upsertHandler(parse(pastCreateMatchId, 1, 1), ctxA)).rejects.toMatchObject({ code: "FORBIDDEN" });
 

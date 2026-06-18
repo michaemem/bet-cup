@@ -256,8 +256,10 @@ relevant rollout phase ships; before that, the sub-section reads "TBD — see
   the default DB-free `ci` gate) plus a `skipIf(!dbConfigured)` live-DB lane
   proving the action-layer translation on top of RLS — pre-kickoff
   create/edit succeeds and is caller-scoped (#3: `predictor_id` is the session
-  identity, no owner channel), post-kickoff create/edit → `FORBIDDEN` (the RLS
-  zero-row lock, #4), unknown match id → `NOT_FOUND` (distinct branch), and B's
+  identity, no owner channel), post-kickoff create/edit → `FORBIDDEN` (#4 — the
+  app-layer `Date.now()` pre-check fires for the long-past seeded matches; the
+  RLS zero-row is the race-proof backstop, proven at the DB layer by the
+  write-flip below), unknown match id → `NOT_FOUND` (distinct branch), and B's
   upsert writes B's own row while A's is untouched. Also closed the one DB-layer
   gap: `src/db/predictions.rls.test.ts` gained a near-boundary **write**-flip
   case (A's own UPDATE flips from 1 row to zero as Postgres `now()` crosses
