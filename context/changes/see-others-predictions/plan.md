@@ -254,10 +254,10 @@ None — no schema or data changes.
 
 #### Automated
 
-- [x] 3.1 Default suite still green (self-skips without DB): `npm run test`
-- [x] 3.2 Against a local stack the new test passes: `npm test -- match-predictions.rls`
-- [x] 3.3 Linting passes: `npm run lint`
+- [x] 3.1 Default suite still green (self-skips without DB): `npm run test` — cba65e1
+- [x] 3.2 Against a local stack the new test passes: `npm test -- match-predictions.rls` — cba65e1
+- [x] 3.3 Linting passes: `npm run lint` — cba65e1
 
 #### Manual
 
-- [x] 3.4 Run the RLS test against a local Supabase stack; all cases pass including ordering
+- [x] 3.4 Run the RLS test against a local Supabase stack; all cases pass including ordering — cba65e1
