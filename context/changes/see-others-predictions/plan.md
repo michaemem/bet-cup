@@ -227,13 +227,13 @@ None — no schema or data changes.
 
 #### Automated
 
-- [ ] 1.1 Type checking passes: `npm run build`
-- [ ] 1.2 Linting passes: `npm run lint`
-- [ ] 1.3 Unit tests pass: `npm run test`
+- [x] 1.1 Type checking passes: `npm run build`
+- [x] 1.2 Linting passes: `npm run lint`
+- [x] 1.3 Unit tests pass: `npm run test`
 
 #### Manual
 
-- [ ] 1.4 buildMatchPredictionRows output ordering matches leaderboard order for a hand-checked fixture
+- [x] 1.4 buildMatchPredictionRows output ordering matches leaderboard order for a hand-checked fixture
 
 ### Phase 2: UI (dialog + wiring)
 
