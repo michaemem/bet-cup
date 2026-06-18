@@ -239,25 +239,25 @@ None — no schema or data changes.
 
 #### Automated
 
-- [x] 2.1 Type checking passes: `npm run build`
-- [x] 2.2 Linting passes: `npm run lint`
-- [x] 2.3 Unit tests still pass: `npm run test`
+- [x] 2.1 Type checking passes: `npm run build` — e78e581
+- [x] 2.2 Linting passes: `npm run lint` — e78e581
+- [x] 2.3 Unit tests still pass: `npm run test` — e78e581
 
 #### Manual
 
-- [x] 2.4 Locked match: button + dialog list in leaderboard order, predictions or "—", own row marked, no points column
-- [x] 2.5 Resulted match: dialog shows result + points column (non-predictors 0)
-- [x] 2.6 Future match shows no button / no other-participant data
-- [x] 2.7 No horizontal overflow on phone width; dialog dismissible
+- [x] 2.4 Locked match: button + dialog list in leaderboard order, predictions or "—", own row marked, no points column — e78e581
+- [x] 2.5 Resulted match: dialog shows result + points column (non-predictors 0) — e78e581
+- [x] 2.6 Future match shows no button / no other-participant data — e78e581
+- [x] 2.7 No horizontal overflow on phone width; dialog dismissible — e78e581
 
 ### Phase 3: RLS integration test
 
 #### Automated
 
-- [ ] 3.1 Default suite still green (self-skips without DB): `npm run test`
-- [ ] 3.2 Against a local stack the new test passes: `npm test -- match-predictions.rls`
-- [ ] 3.3 Linting passes: `npm run lint`
+- [x] 3.1 Default suite still green (self-skips without DB): `npm run test`
+- [x] 3.2 Against a local stack the new test passes: `npm test -- match-predictions.rls`
+- [x] 3.3 Linting passes: `npm run lint`
 
 #### Manual
 
-- [ ] 3.4 Run the RLS test against a local Supabase stack; all cases pass including ordering
+- [x] 3.4 Run the RLS test against a local Supabase stack; all cases pass including ordering
