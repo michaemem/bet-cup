@@ -1,7 +1,7 @@
 ---
 change_id: ci-pin-supabase-cli
 title: Pin Supabase CLI in CI to fix the rls job admin-seed regression
-status: implementing
+status: implemented
 created: 2026-06-18
 updated: 2026-06-18
 archived_at: null

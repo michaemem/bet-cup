@@ -164,11 +164,11 @@ No schema migration; no seed change.
 
 #### Automated
 
-- [x] 1.1 Seed revert clean: `git diff --stat 4247271^ -- supabase/seed.sql.template` is empty
-- [x] 1.2 Workflow valid YAML; `npm run lint` passes
-- [x] 1.3 Live-DB RLS suites pass locally against pinned 2.98.2: `npm test -- rls` → 57/57
-- [ ] 1.4 The PR's `rls` CI job passes with CLI 2.98.2
+- [x] 1.1 Seed revert clean: `git diff --stat 4247271^ -- supabase/seed.sql.template` is empty — 121b212
+- [x] 1.2 Workflow valid YAML; `npm run lint` passes — 121b212
+- [x] 1.3 Live-DB RLS suites pass locally against pinned 2.98.2: `npm test -- rls` → 57/57 — 121b212
+- [x] 1.4 The PR's `rls` CI job passes with CLI 2.98.2 — 121b212
 
 #### Manual
 
-- [ ] 1.5 Confirm on the PR that `rls` installed `2.98.2`, went green, and the `permission denied` error is gone from all suites
+- [x] 1.5 Confirm on the PR that `rls` installed `2.98.2`, went green, and the `permission denied` error is gone from all suites — 121b212
