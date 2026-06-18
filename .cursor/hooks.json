@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "hooks": {
+    "afterFileEdit": [
+      {
+        "command": ".cursor/hooks/lint-edited-file.sh",
+        "timeout": 120
+      },
+      {
+        "command": ".cursor/hooks/typecheck-on-edit.sh",
+        "timeout": 180
+      }
+    ]
+  }
+}

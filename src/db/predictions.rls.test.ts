@@ -370,6 +370,59 @@ describe.skipIf(!dbConfigured)("predictions RLS — blindness + write-lock (live
     expect(revealed).toHaveLength(1);
     expect(revealed?.[0]).toEqual({ home_goals: 2, away_goals: 1 });
   }, 20000);
+
+  it("flips A's own write from allowed to locked as the match crosses kickoff", async () => {
+    // Complements the SELECT-flip above: prove the WRITE-lock flips at the exact
+    // Postgres-now() boundary. Seed a dedicated match a few seconds out (hung off
+    // the existing tournament so afterAll's cascade cleans it up). A inserts a
+    // prediction through A's OWN session BEFORE kickoff (real INSERT path).
+    const leadMs = 3000;
+    const kickoffMs = Date.now() + leadMs;
+    const boundaryMatchId = await seedMatch(new Date(kickoffMs).toISOString(), "WriteFlip", "Boundary");
+
+    const insert = await participantA
+      .from("predictions")
+      .insert({ predictor_id: aUserId, match_id: boundaryMatchId, home_goals: 1, away_goals: 1 })
+      .select("id");
+    // Pre-kickoff: the write is allowed.
+    expect(insert.error).toBeNull();
+    expect(insert.data ?? []).toHaveLength(1);
+
+    // Sanity: an UPDATE pre-kickoff finds and edits A's row (1 row affected), so a
+    // later zero-row result is the lock engaging — not a missing/never-writable row.
+    const preEdit = await participantA
+      .from("predictions")
+      .update({ home_goals: 2, away_goals: 0 })
+      .eq("match_id", boundaryMatchId)
+      .eq("predictor_id", aUserId)
+      .select("id");
+    expect(preEdit.error).toBeNull();
+    expect(preEdit.data ?? []).toHaveLength(1);
+
+    // Poll the participant client until Postgres' now() has crossed kickoff and the
+    // UPDATE USING (not match_is_kicked_off) filters A's row out → zero rows
+    // (robust to small clock skew; never a single fixed sleep firing a hair early).
+    const deadline = Date.now() + 15000;
+    let locked = false;
+    while (Date.now() < deadline) {
+      const { data, error } = await participantA
+        .from("predictions")
+        .update({ home_goals: 9, away_goals: 9 })
+        .eq("match_id", boundaryMatchId)
+        .eq("predictor_id", aUserId)
+        .select("id");
+      // UPDATE never errors here — the policy filters, it does not raise.
+      expect(error).toBeNull();
+      if ((data ?? []).length === 0) {
+        locked = true;
+        break;
+      }
+      await sleep(250);
+    }
+
+    // After kickoff: A's own write is locked (the row is no longer reachable for UPDATE).
+    expect(locked).toBe(true);
+  }, 20000);
 });
 
 /**
