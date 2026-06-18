@@ -3,14 +3,20 @@
 -- {{ADMIN_PASSWORD}} from .env into supabase/seed.sql (gitignored), which
 -- `supabase start` / `supabase db reset` then applies.
 --
--- app.admin_email must be visible to the handle_new_user trigger in THIS
--- session, so set_config(..., false) sets it session-wide before the insert.
+-- Admin promotion is made DETERMINISTIC by the explicit user_roles insert at the
+-- bottom of this file — it does not depend on trigger timing. The set_config
+-- below is a best-effort FALLBACK that lets the handle_new_user trigger also
+-- promote the admin when it can observe app.admin_email in-session; both paths
+-- dedupe via UNIQUE(user_id, role) + `on conflict do nothing`.
+-- WHY the explicit insert exists: set_config(..., false) is session-scoped, so it
+-- only reaches the trigger if the CLI applies the whole seed in ONE connection.
+-- Newer Supabase CLIs apply seed.sql via a batched/multi-statement executor where
+-- that assumption no longer holds, silently skipping the admin row (the admin is
+-- created but never promoted → later `permission denied` on admin-only inserts).
 -- NOTE: the local seeding role is not a superuser and cannot run
--- `ALTER DATABASE ... SET` (permission denied, SQLSTATE 42501), so persistence
--- across connections is intentionally NOT done here. The production bootstrap
--- (README) runs the ALTER DATABASE in Studio under a privileged connection;
--- locally, session-scoped set_config is sufficient because the seed runs the
--- admin insert in the same psql session that the trigger fires in.
+-- `ALTER DATABASE ... SET` (permission denied, SQLSTATE 42501), so persisting the
+-- GUC across connections is intentionally NOT done here. The production bootstrap
+-- (README) runs the ALTER DATABASE in Studio under a privileged connection.
 
 select set_config('app.admin_email', '{{ADMIN_EMAIL}}', false);
 
@@ -77,4 +83,12 @@ select
   now(),
   now()
 from new_admin
+on conflict do nothing;
+
+-- Deterministic admin promotion: grant the admin role directly, independent of
+-- whether the handle_new_user trigger observed app.admin_email in-session. Runs
+-- in the same privileged context as the auth.users insert above; UNIQUE(user_id,
+-- role) + `on conflict do nothing` dedupes against the trigger's own attempt.
+insert into public.user_roles (user_id, role)
+select id, 'admin' from auth.users where email = '{{ADMIN_EMAIL}}'
 on conflict do nothing;
