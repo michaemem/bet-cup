@@ -91,7 +91,7 @@ orchestrator updates Status as artifacts appear on disk.
 |---|------------|-----------------|----------------|------------|--------|---------------|
 | 1 | Scoring & ranking correctness | Pin FR-018 grid, recompute-on-correction, and tie-break order at the cheapest layer | #2, #7 | unit (or DB-level if scoring is SQL) | complete | context/changes/testing-scoring/ |
 | 2 | Blindness & ownership at the DB boundary | Prove predictions are withheld before kickoff and only the owner can mutate them | #1, #3, #5 | integration (RLS vs live Supabase) | complete | context/changes/testing-blindness-ownership/ |
-| 3 | Kickoff-lock & action mutations | Lock holds at the server; result entry is admin-only; correction recomputes | #4, #3 | integration around `src/actions` | not started | — |
+| 3 | Kickoff-lock & action mutations | Lock holds at the server; result entry is admin-only; correction recomputes | #4, #3 | integration around `src/actions` | change opened | context/changes/testing-kickoff-lock-actions/ |
 | 4 | Full-flow + CI parity gates | One predict→kickoff→result→leaderboard path; RLS/scoring tests gated in CI against real Postgres | #6, cross-cutting | e2e + gates | not started | — |
 
 **Status vocabulary** (fixed — parser literals): `not started` → `change
