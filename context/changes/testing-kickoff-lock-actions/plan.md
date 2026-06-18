@@ -262,24 +262,24 @@ None — test-only change. No schema, RLS, or production code changes.
 
 #### Automated
 
-- [x] 1.1 Type checking passes: `npm run lint`
-- [x] 1.2 Default suite green with no DB (always-runs lane runs, live lane skips): `npm test`
-- [x] 1.3 Live-DB lane passes: `npm test -- predictions` against local stack (Node 22)
+- [x] 1.1 Type checking passes: `npm run lint` — 71e72a6
+- [x] 1.2 Default suite green with no DB (always-runs lane runs, live lane skips): `npm test` — 71e72a6
+- [x] 1.3 Live-DB lane passes: `npm test -- predictions` against local stack (Node 22) — 71e72a6
 
 #### Manual
 
-- [x] 1.4 Always-runs UNAUTHORIZED test is executed (not skipped) under plain `npm test`
-- [x] 1.5 Post-kickoff cases fail for the RLS zero-row reason, not only the app pre-check
+- [x] 1.4 Always-runs UNAUTHORIZED test is executed (not skipped) under plain `npm test` — 71e72a6
+- [x] 1.5 Post-kickoff cases fail for the RLS zero-row reason, not only the app pre-check — 71e72a6
 
 ### Phase 2: DB boundary write-flip + cookbook
 
 #### Automated
 
-- [ ] 2.1 Live-DB suite incl. new boundary case passes: `npm test -- rls` (Node 22)
-- [ ] 2.2 Default suite still green with no DB: `npm test`
-- [ ] 2.3 Lint passes: `npm run lint`
+- [x] 2.1 Live-DB suite incl. new boundary case passes: `npm test -- rls` (Node 22)
+- [x] 2.2 Default suite still green with no DB: `npm test`
+- [x] 2.3 Lint passes: `npm run lint`
 
 #### Manual
 
-- [ ] 2.4 Boundary case observed crossing kickoff (polls, then write locked), not trivially passing
-- [ ] 2.5 §6.3 reads as a usable recipe for a future contributor
+- [x] 2.4 Boundary case observed crossing kickoff (polls, then write locked), not trivially passing
+- [x] 2.5 §6.3 reads as a usable recipe for a future contributor

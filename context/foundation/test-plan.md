@@ -6,7 +6,7 @@
 >
 > Refresh: re-run `/10x-test-plan --refresh` when stale (see §8).
 >
-> Last updated: 2026-06-08 (Phase 2 complete)
+> Last updated: 2026-06-18 (Phase 3 complete — action-layer + boundary write-flip)
 
 ## 1. Strategy
 
@@ -75,8 +75,8 @@ coverage.
 |------|------------------------------|----------------|--------------------------------------|-----------------------|-----------------------|
 | #1 | A non-predictor's row-fetch for an un-kicked match returns zero prediction values; after kickoff the values become visible to all | "UI hides it" is not "DB withholds it"; the admin is NOT exempt from blindness | Where blindness is enforced (RLS `SELECT` predicate) and how `now()` evaluates per-row at fetch time | integration (RLS vs live Supabase) | asserting UI state instead of the actual row-fetch; testing only the predictor's own view |
 | #2 | 5/3/2/0 correct across the full prediction×result grid incl. draws and negative goal-difference; a corrected result re-scores every affected prediction | "request returned 200 / 'saved'" is not "scores recomputed"; exact-score must also satisfy the outcome branch | Whether scoring lives in TS or a Postgres view; where a result correction triggers recompute | unit (pure fn) if scoring is extractable, else DB-level | oracle copied from the implementation under test; happy-path single pair only |
-| #3 | Acting as participant A cannot mutate B's prediction; the server rejects a spoofed owner id and trusts only the session identity | "logged in" is not "owns this row"; a client-supplied owner id must never be trusted | Where ownership is checked (server action vs RLS) and what column identifies the owner | integration (RLS + action) | over-mocking the auth/session context; testing only the legitimate-owner path |
-| #4 | Create/edit is rejected once kickoff has passed; the cutoff uses the server clock, not the client's | the client clock must not be trusted; off-by-one at the exact kickoff second | Which clock is the source of truth and where the cutoff is enforced (DB vs API) | integration (+ unit on the time helper) | freezing time so the kickoff boundary is never actually crossed in the test |
+| #3 | At the DB layer: a spoofed owner id is rejected. At the action layer: the upsert exposes no owner channel — `predictor_id` is the session identity and the write is scoped to the caller's own row | "logged in" is not "owns this row"; at the action layer there is nothing to spoof (the schema has no owner field), so don't write a "spoof rejected" action test — that belongs to RLS (already covered) | Where ownership is enforced (RLS spoof-rejection vs action session-derivation) and that the action input carries no owner field | DB-layer spoof/cross-owner = RLS (shipped Phase 2); action-layer = integration asserting caller-scoping | over-mocking the auth/session context; testing only the legitimate-owner path; re-asserting RLS spoof-rejection at the action layer |
+| #4 | Create/edit is rejected once kickoff has passed, using a server clock not the client's. Note two server clocks: the action pre-check uses Node `Date.now()` (advisory, friendly message); the authoritative lock is Postgres `now()` via RLS, surfaced as zero-row → FORBIDDEN | the client clock must not be trusted; off-by-one at the exact kickoff second; the action's own `Date.now()` pre-check is NOT the race-proof lock — the RLS zero-row is | Which clock is authoritative (Postgres `now()` in RLS) vs advisory (action pre-check), and how the handler translates each (NOT_FOUND vs PREDICTION_LOCKED vs zero-row→FORBIDDEN) | DB lock = RLS (shipped); action-layer = integration asserting the handler's message/zero-row translation | re-proving the DB clock at the action layer; freezing time so the kickoff boundary is never actually crossed in the test |
 | #5 | Service-role usage is confined to participant creation and never reads predictions | "only one importer today" can silently stop being true | Which Supabase client each action uses and the service-role blast radius | integration + isolation assertion | grep-across-`src` false positives — assert production reads / importer count (per lessons.md) |
 | #6 | RLS and scoring tests run against a real Postgres in CI, not only a dev machine | "passes locally" is not "safe in prod" | How CI can stand up an ephemeral Supabase and which migrations gate deploy | quality gate (CI) + pre-prod smoke | a parity claim with no automated gate behind it |
 | #7 | Ranking follows total → exact-score count → alphabetical-by-name deterministically, including genuine tie cases | a stable sort is assumed; name tie-break must be case-insensitive | Where ranking / tie-break is computed (SQL vs TS) | unit (ranking fn) or DB-level | a snapshot of one leaderboard with no actual ties exercised |
@@ -91,7 +91,7 @@ orchestrator updates Status as artifacts appear on disk.
 |---|------------|-----------------|----------------|------------|--------|---------------|
 | 1 | Scoring & ranking correctness | Pin FR-018 grid, recompute-on-correction, and tie-break order at the cheapest layer | #2, #7 | unit (or DB-level if scoring is SQL) | complete | context/changes/testing-scoring/ |
 | 2 | Blindness & ownership at the DB boundary | Prove predictions are withheld before kickoff and only the owner can mutate them | #1, #3, #5 | integration (RLS vs live Supabase) | complete | context/changes/testing-blindness-ownership/ |
-| 3 | Kickoff-lock & action mutations | Lock holds at the server; result entry is admin-only; correction recomputes | #4, #3 | integration around `src/actions` | change opened | context/changes/testing-kickoff-lock-actions/ |
+| 3 | Kickoff-lock & action mutations | Lock holds at the server; result entry is admin-only; correction recomputes | #4, #3 | integration around `src/actions` | complete | context/changes/testing-kickoff-lock-actions/ |
 | 4 | Full-flow + CI parity gates | One predict→kickoff→result→leaderboard path; RLS/scoring tests gated in CI against real Postgres | #6, cross-cutting | e2e + gates | not started | — |
 
 **Status vocabulary** (fixed — parser literals): `not started` → `change
@@ -197,8 +197,46 @@ relevant rollout phase ships; before that, the sub-section reads "TBD — see
 
 ### 6.3 Adding an action-layer test
 
-- TBD — see §3 Phase 3 (kickoff-lock + admin-only result entry). Current
-  reference: `src/actions/participants.test.ts`.
+- **Location**: next to the action surface, `src/actions/<surface>.test.ts`.
+- **Reference test**: `src/actions/predictions.test.ts` (kickoff-lock +
+  caller-scoping), `src/actions/account.test.ts` (the live-DB session/cookie
+  builder), `src/actions/results.test.ts` (the always-runs guard idiom).
+- **Run locally**: `npm test` (always-runs lane); add the four `SUPABASE_*` env
+  vars with the local stack up for the live lane (`npm test -- predictions`).
+- **Pattern** (Phase 3 — Risk #3, #4): exercise the REAL handler, two lanes.
+  1. **Reach the handler.** `astro:actions`/`astro:env/server` are virtual
+     modules aliased to `test/stubs/*` (`defineAction` is identity), so
+     `const { server } = await import("@/actions/index")` resolves and the
+     config — including `handler` — is reachable:
+     `(server.<surface>.<action> as unknown as { handler }).handler`. Validate
+     input with the action's zod schema `.parse(...)` before calling (the stub
+     does not run `input` validation for you).
+  2. **NO `@vitest-environment` pragma** — stay on the global `happy-dom` env.
+     supabase-js (2.105.3) throws on client init under `@vitest-environment
+     node` (WebSocket; see §6.6), and `happy-dom` provides `WebSocket`.
+  3. **Always-runs lane** — a plain top-level `describe` proving the auth guard:
+     call the handler with `locals.user` absent → rejects with code
+     `UNAUTHORIZED` before any DB call. This runs in the default DB-free
+     `npm test` / CI gate, so the guard never silently regresses.
+  4. **Live-DB lane** — `describe.skipIf(!dbConfigured)` with `dbConfigured =
+     Boolean(SUPABASE_DB_URL && ANON_KEY && SERVICE_ROLE_KEY)`. Inline (house
+     style — no shared helper) a `cookieStub()` and an `authedContext(email,
+     password)` builder: sign in on a `@supabase/ssr` `createServerClient`
+     backed by an in-memory cookie jar, then serialize the jar into a `Cookie`
+     header via a **plain** `{ headers: { get } }` request stub — happy-dom's
+     `Headers` strips the forbidden `Cookie` header, which would silently leave
+     the handler's client unauthenticated. `beforeAll` seeds via service-role +
+     an admin session (tournament, future + past matches; a post-kickoff row is
+     seeded service-role to bypass the INSERT lock); `afterAll` cascades the
+     tournament and deletes the auth users.
+  5. **Assert error code + which branch fired** (`UNAUTHORIZED` /
+     `NOT_FOUND` / `FORBIDDEN`), never the message text (messages are UX, not
+     contract) and never the Postgres `error.code`. For the kickoff lock (#4),
+     a post-kickoff create/edit → `FORBIDDEN` (the RLS zero-row guard), an
+     unknown match id → `NOT_FOUND`. For ownership (#3), there is **no owner
+     channel** in the input schema, so assert caller-scoping (acting as B writes
+     B's own row; A's row is byte-for-byte unchanged) rather than re-proving the
+     RLS spoof-rejection — that lives in `src/db/predictions.rls.test.ts`.
 
 ### 6.4 Adding an e2e test
 
@@ -213,6 +251,21 @@ relevant rollout phase ships; before that, the sub-section reads "TBD — see
 
 (Filled in by `/10x-implement` as each phase lands.)
 
+- **Phase 3 — Kickoff-lock & action mutations (2026-06-18)** — added
+  `src/actions/predictions.test.ts`: an always-runs `UNAUTHORIZED` guard (rides
+  the default DB-free `ci` gate) plus a `skipIf(!dbConfigured)` live-DB lane
+  proving the action-layer translation on top of RLS — pre-kickoff
+  create/edit succeeds and is caller-scoped (#3: `predictor_id` is the session
+  identity, no owner channel), post-kickoff create/edit → `FORBIDDEN` (the RLS
+  zero-row lock, #4), unknown match id → `NOT_FOUND` (distinct branch), and B's
+  upsert writes B's own row while A's is untouched. Also closed the one DB-layer
+  gap: `src/db/predictions.rls.test.ts` gained a near-boundary **write**-flip
+  case (A's own UPDATE flips from 1 row to zero as Postgres `now()` crosses
+  kickoff — polled, never a fixed sleep), complementing the existing SELECT-flip.
+  Convention reinforced: assert error **code + which branch fired**
+  (`UNAUTHORIZED`/`NOT_FOUND`/`FORBIDDEN`), never message text and never the
+  Postgres `error.code`. Pattern documented in §6.3. No production code, schema,
+  or RLS policy changed — the enforcement already existed; the phase pins it.
 - **Phase 2 — Blindness & ownership at the DB boundary (2026-06-08)** —
   extended `src/db/predictions.rls.test.ts` with 6 live-DB RLS cases (#1/#3:
   spoofed-owner INSERT, cross-owner UPDATE/DELETE, unfiltered-list blindness,
