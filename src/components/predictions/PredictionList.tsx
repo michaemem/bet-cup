@@ -1,4 +1,6 @@
+import { MatchPredictionsDialog } from "@/components/predictions/MatchPredictionsDialog";
 import { PredictionForm } from "@/components/predictions/PredictionForm";
+import type { MatchPredictionParticipantRow } from "@/lib/match-predictions";
 
 export interface PredictionMatchRow {
   /** The match id (the prediction target). */
@@ -11,6 +13,13 @@ export interface PredictionMatchRow {
   isPast: boolean;
   /** The caller's own prediction, or `null` if they have not predicted. */
   prediction: { homeGoals: number; awayGoals: number } | null;
+  /** The match result, populated only for kicked-off rows once entered. */
+  result: { homeScore: number; awayScore: number } | null;
+  /**
+   * All participants' predictions in leaderboard order, populated only for
+   * kicked-off (`isPast`) rows; empty otherwise (blindness enforced at the DB).
+   */
+  participants: MatchPredictionParticipantRow[];
 }
 
 interface Props {
@@ -52,7 +61,17 @@ export function PredictionList({ matches }: Props) {
               </span>
               <span className="text-muted-foreground ml-3 text-sm">{match.kickoffLocal}</span>
             </div>
-            {match.isPast && <LockedScore prediction={match.prediction} />}
+            {match.isPast && (
+              <div className="flex items-center gap-3">
+                <LockedScore prediction={match.prediction} />
+                <MatchPredictionsDialog
+                  homeTeam={match.homeTeam}
+                  awayTeam={match.awayTeam}
+                  result={match.result}
+                  participants={match.participants}
+                />
+              </div>
+            )}
           </div>
           {!match.isPast && (
             <PredictionForm

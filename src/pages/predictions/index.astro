@@ -1,6 +1,7 @@
 ---
 import { PredictionList, type PredictionMatchRow } from "@/components/predictions/PredictionList";
 import Layout from "@/layouts/Layout.astro";
+import { loadMatchPredictions } from "@/lib/match-predictions";
 import { createClient } from "@/lib/supabase";
 import { formatInZone } from "@/lib/time";
 
@@ -52,7 +53,7 @@ if (supabase && userId) {
 
     const byMatch = new Map(predictions.map((p) => [p.match_id, p]));
     const now = Date.now();
-    matchRows = matches.map((match) => {
+    const baseRows = matches.map((match) => {
       const utc = new Date(match.kickoff_time);
       const prediction = byMatch.get(match.id);
       return {
@@ -62,6 +63,27 @@ if (supabase && userId) {
         kickoffLocal: formatInZone(utc, zone),
         isPast: utc.getTime() <= now,
         prediction: prediction ? { homeGoals: prediction.home_goals, awayGoals: prediction.away_goals } : null,
+      };
+    });
+
+    // Kicked-off matches reveal every participant's prediction (post-kickoff RLS
+    // gate). Load them once server-side and attach each view to its row; future
+    // rows carry no cross-participant data.
+    const kickedOffMatchIds = baseRows.filter((row) => row.isPast).map((row) => row.id);
+    let predictionViews;
+    try {
+      predictionViews = await loadMatchPredictions(supabase, userId, kickedOffMatchIds);
+    } catch (error) {
+      console.error("predictions: failed to load match predictions", error);
+      return new Response("Failed to load match predictions", { status: 500 });
+    }
+
+    matchRows = baseRows.map((row) => {
+      const view = row.isPast ? predictionViews.get(row.id) : undefined;
+      return {
+        ...row,
+        result: view?.result ?? null,
+        participants: view?.participants ?? [],
       };
     });
   }
