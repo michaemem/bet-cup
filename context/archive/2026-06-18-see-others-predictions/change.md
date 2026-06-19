@@ -1,10 +1,10 @@
 ---
 change_id: see-others-predictions
 title: See other participants' predictions for a kicked-off match (extends S-05)
-status: impl_reviewed
+status: archived
 created: 2026-06-18
-updated: 2026-06-18
-archived_at: null
+updated: 2026-06-19
+archived_at: 2026-06-19T05:21:08Z
 ---
 
 ## Notes
