@@ -1,5 +1,5 @@
 import { fileURLToPath } from "node:url";
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 
 const srcDir = fileURLToPath(new URL("./src/", import.meta.url));
 const astroMiddlewareStub = fileURLToPath(new URL("./test/stubs/astro-middleware.ts", import.meta.url));
@@ -9,6 +9,11 @@ const astroEnvServerStub = fileURLToPath(new URL("./test/stubs/astro-env-server.
 export default defineConfig({
   test: {
     environment: "happy-dom",
+    // Playwright specs live in tests/e2e/*.spec.ts and are run by `npm run e2e`,
+    // not Vitest. Without this they match Vitest's default `**/*.spec.ts` include
+    // and crash it (`test.beforeEach() not expected here`). Keep Vitest's other
+    // default excludes (node_modules, dist, .astro, …).
+    exclude: [...configDefaults.exclude, "tests/e2e/**"],
   },
   resolve: {
     alias: [
