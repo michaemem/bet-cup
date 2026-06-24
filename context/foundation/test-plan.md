@@ -6,7 +6,8 @@
 >
 > Refresh: re-run `/10x-test-plan --refresh` when stale (see §8).
 >
-> Last updated: 2026-06-18 (Phase 3 complete — action-layer + boundary write-flip)
+> Last updated: 2026-06-24 (added Risk #8 prediction-persistence + the E2E seed
+> exemplar `tests/e2e/seed.spec.ts`; Phase 4 e2e infra still pending)
 
 ## 1. Strategy
 
@@ -39,15 +40,16 @@ terms, not test names. The Source column cites the _evidence that surfaced
 this risk_ — never a specific file as "where the failure lives" (that is
 research's job, see §1 principle #3).
 
-| #   | Risk (failure scenario)                                                                                              | Impact | Likelihood | Source (evidence — not anchor)                                                                             |
-| --- | -------------------------------------------------------------------------------------------------------------------- | ------ | ---------- | ---------------------------------------------------------------------------------------------------------- |
-| 1   | A participant's (or the admin's) prediction is visible to anyone else before that match's kickoff                    | High   | High       | PRD FR-015 + Success-Criteria integrity invariant; interview Q1, Q3; hot-spot dir `src/db` (6 commits/30d) |
-| 2   | Points are computed wrong for a (prediction, result) pair, or a result correction fails to recompute affected scores | High   | High       | PRD FR-018 / FR-010 + Success-Criteria scoring guardrail; interview Q4; roadmap S-04 (next slice)          |
-| 3   | One participant creates, edits, or deletes another participant's prediction (ownership / IDOR)                       | High   | High       | PRD FR-013 / FR-015; interview Q1, Q3; hot-spot dir `src/actions` (5 commits/30d), `src/db`                |
-| 4   | A prediction is created or edited after its match's kickoff (kickoff-lock bypass)                                    | High   | Medium     | PRD FR-014; hot-spot dir `src/lib` (14 commits/30d); interview Q1                                          |
-| 5   | The service-role client or a misscoped server action bypasses RLS and exposes predictions                            | High   | Medium     | roadmap S-01 risk note; AGENTS.md service-role guard; lessons.md                                           |
-| 6   | RLS / migration verified locally behaves differently against the deployed DB (silent leak or regression in prod)     | High   | Medium     | interview Q2; AGENTS.md deploy / migration notes                                                           |
-| 7   | The leaderboard ranks participants wrongly — wrong totals or wrong tie-break order                                   | Medium | Medium     | PRD FR-020; roadmap S-04                                                                                   |
+| #   | Risk (failure scenario)                                                                                                                   | Impact | Likelihood | Source (evidence — not anchor)                                                                                  |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------ | ---------- | --------------------------------------------------------------------------------------------------------------- |
+| 1   | A participant's (or the admin's) prediction is visible to anyone else before that match's kickoff                                         | High   | High       | PRD FR-015 + Success-Criteria integrity invariant; interview Q1, Q3; hot-spot dir `src/db` (6 commits/30d)      |
+| 2   | Points are computed wrong for a (prediction, result) pair, or a result correction fails to recompute affected scores                      | High   | High       | PRD FR-018 / FR-010 + Success-Criteria scoring guardrail; interview Q4; roadmap S-04 (next slice)               |
+| 3   | One participant creates, edits, or deletes another participant's prediction (ownership / IDOR)                                            | High   | High       | PRD FR-013 / FR-015; interview Q1, Q3; hot-spot dir `src/actions` (5 commits/30d), `src/db`                     |
+| 4   | A prediction is created or edited after its match's kickoff (kickoff-lock bypass)                                                         | High   | Medium     | PRD FR-014; hot-spot dir `src/lib` (14 commits/30d); interview Q1                                               |
+| 5   | The service-role client or a misscoped server action bypasses RLS and exposes predictions                                                 | High   | Medium     | roadmap S-01 risk note; AGENTS.md service-role guard; lessons.md                                                |
+| 6   | RLS / migration verified locally behaves differently against the deployed DB (silent leak or regression in prod)                          | High   | Medium     | interview Q2; AGENTS.md deploy / migration notes                                                                |
+| 7   | The leaderboard ranks participants wrongly — wrong totals or wrong tie-break order                                                        | Medium | Medium     | PRD FR-020; roadmap S-04                                                                                        |
+| 8   | A participant's saved prediction is lost or shown stale after a page reload / navigation (the score doesn't survive a real SSR re-render) | Medium | Low        | PRD predict flow; `PredictionForm` reload-on-success pattern; roadmap Phase 4 full-flow (predict→…→leaderboard) |
 
 **Impact × Likelihood rubric.** Both axes scored High / Medium / Low so two
 readers agree on the same row.
@@ -80,6 +82,7 @@ coverage.
 | #5   | Service-role usage is confined to participant creation and never reads predictions                                                                                                                                                                                             | "only one importer today" can silently stop being true                                                                                                                                                   | Which Supabase client each action uses and the service-role blast radius                                                                                                          | integration + isolation assertion                                                                        | grep-across-`src` false positives — assert production reads / importer count (per lessons.md)                                       |
 | #6   | RLS and scoring tests run against a real Postgres in CI, not only a dev machine                                                                                                                                                                                                | "passes locally" is not "safe in prod"                                                                                                                                                                   | How CI can stand up an ephemeral Supabase and which migrations gate deploy                                                                                                        | quality gate (CI) + pre-prod smoke                                                                       | a parity claim with no automated gate behind it                                                                                     |
 | #7   | Ranking follows total → exact-score count → alphabetical-by-name deterministically, including genuine tie cases                                                                                                                                                                | a stable sort is assumed; name tie-break must be case-insensitive                                                                                                                                        | Where ranking / tie-break is computed (SQL vs TS)                                                                                                                                 | unit (ranking fn) or DB-level                                                                            | a snapshot of one leaderboard with no actual ties exercised                                                                         |
+| #8   | A participant enters a score, and after a real page reload the SAME score is still rendered (persisted to the DB and re-read by the SSR surface), not lost or reset to the default                                                                                             | "the form said saved" is not "the row survives a reload"; the post-save in-memory state is not the SSR-re-read state                                                                                     | That `predictions.upsert` writes the row and `/predictions` re-queries it on every SSR render (no client-only cache masking a lost write)                                         | e2e (the only layer that exercises submit → real reload → SSR re-read end-to-end)                        | asserting the in-memory form value right after submit instead of re-reading after a real `page.reload()`; using `waitForTimeout`    |
 
 ## 3. Phased Rollout
 
@@ -241,7 +244,21 @@ password)` builder: sign in on a `@supabase/ssr` `createServerClient`
 
 ### 6.4 Adding an e2e test
 
-- TBD — see §3 Phase 4 (predict→kickoff→result→leaderboard happy path).
+- **Location**: project-level e2e dir, `tests/e2e/<feature>.spec.ts`, one test
+  per file.
+- **Seed / reference test**: `tests/e2e/seed.spec.ts` — the exemplar every
+  generated E2E test is modeled on (Risk #8: a participant's own prediction
+  persists across a real SSR reload). It demonstrates the five conventions:
+  `getByRole` as the default selector, wait-for-state (post-login
+  `waitForURL`, the `Save`→`Update` flip) never wait-for-time, unique per-run
+  test data, owner-scoped cleanup, and a name bound to a `test-plan.md` risk.
+  _What the seed shows is what generated tests inherit_ — keep it clean.
+- **Run locally**: requires the running app (`npm run dev`) + a Playwright
+  config with `baseURL`, and a seeded participant + a future match (see the
+  spec's provenance header for the env knobs). Playwright is **not yet
+  installed** — wiring it up is Phase 4 (see §3, §6.5).
+- **Full predict→kickoff→result→leaderboard happy path + CI gate**: TBD — see
+  §3 Phase 4.
 
 ### 6.5 Wiring a CI quality gate
 
