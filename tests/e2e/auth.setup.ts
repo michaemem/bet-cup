@@ -19,8 +19,21 @@ const PARTICIPANT_PASSWORD = process.env.E2E_PARTICIPANT_PASSWORD ?? "participan
 
 setup("authenticate", async ({ page }) => {
   await page.goto("/auth/signin");
-  await page.getByRole("textbox", { name: "Username" }).fill(PARTICIPANT_USERNAME);
-  await page.getByLabel("Password").fill(PARTICIPANT_PASSWORD);
+
+  // The form is a hydrated React island with controlled inputs. A fill that lands
+  // before hydration is wiped when React mounts and resets state to empty, so the
+  // click would submit a blank form. Re-fill until the values persist (wait for
+  // STATE, never a fixed timeout), then submit. exact: true on the password label
+  // avoids the "Show password" toggle whose aria-label substring-matches "Password".
+  const username = page.getByRole("textbox", { name: "Username" });
+  const password = page.getByLabel("Password", { exact: true });
+  await expect(async () => {
+    await username.fill(PARTICIPANT_USERNAME);
+    await password.fill(PARTICIPANT_PASSWORD);
+    expect(await username.inputValue()).toBe(PARTICIPANT_USERNAME);
+    expect(await password.inputValue()).toBe(PARTICIPANT_PASSWORD);
+  }).toPass({ timeout: 10_000 });
+
   await page.getByRole("button", { name: "Sign in" }).click();
 
   // Wait for STATE: the post-login redirect proves the session cookie is set
