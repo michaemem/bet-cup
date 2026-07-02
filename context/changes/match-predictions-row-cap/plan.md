@@ -325,8 +325,8 @@ None — no schema, migration, RLS, or view changes.
 
 #### Manual
 
-- [ ] 1.5 Over-1000-row dataset shows correct non-zero points in the dialog
-- [ ] 1.6 Per-participant points match their leaderboard contribution
+- [x] 1.5 Over-1000-row dataset shows correct non-zero points in the dialog
+- [x] 1.6 Per-participant points match their leaderboard contribution
 
 ### Phase 2: Defensive Points Display
 
@@ -339,16 +339,16 @@ None — no schema, migration, RLS, or view changes.
 
 #### Manual
 
-- [ ] 2.5 Non-predictor on resulted match shows `0 pts`; no scored participant shows `—`
+- [x] 2.5 Non-predictor on resulted match shows `0 pts`; no scored participant shows `—`
 
 ### Phase 3: Live-DB Regression Test
 
 #### Automated
 
-- [x] 3.1 Linting passes: `npm run lint`
-- [x] 3.2 Default `npm test` passes and skips live-DB suite without DB env
-- [ ] 3.3 Over-cap live-DB test passes with local Supabase + env set
+- [x] 3.1 Linting passes: `npm run lint` — 447323c
+- [x] 3.2 Default `npm test` passes and skips live-DB suite without DB env — 447323c
+- [x] 3.3 Over-cap live-DB test passes with local Supabase + env set — 447323c
 
 #### Manual
 
-- [ ] 3.4 Over-cap test fails against the pre-fix loader (guards the regression)
+- [x] 3.4 Over-cap test fails against the pre-fix loader (guards the regression) — 447323c
