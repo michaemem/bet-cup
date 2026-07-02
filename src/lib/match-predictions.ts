@@ -65,6 +65,16 @@ function compositeKey(matchId: string, predictorId: string): string {
 }
 
 /**
+ * Format a participant's points for display, keeping "no score" distinct from
+ * "scored zero". `null` (no score row — e.g. locked-no-result, or a data gap)
+ * renders as an em dash so a genuinely-missing value can never masquerade as a
+ * legitimate `0`; a real number renders as `N pts` (including `0 pts`).
+ */
+export function formatPoints(points: number | null): string {
+  return points === null ? "—" : `${String(points)} pts`;
+}
+
+/**
  * Pure merge of roster + predictions + results + scores into per-match views.
  *
  * Emits one `MatchPredictionsView` per kicked-off match. Each view's

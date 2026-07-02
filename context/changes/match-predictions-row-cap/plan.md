@@ -318,10 +318,10 @@ None — no schema, migration, RLS, or view changes.
 
 #### Automated
 
-- [x] 1.1 Type checking passes: `npx astro check`
-- [x] 1.2 Linting passes: `npm run lint`
-- [x] 1.3 Unit tests pass: `npm test`
-- [x] 1.4 `readAllPages` unit test proves multi-page stitching + short-page termination
+- [x] 1.1 Type checking passes: `npx astro check` — a11ea78
+- [x] 1.2 Linting passes: `npm run lint` — a11ea78
+- [x] 1.3 Unit tests pass: `npm test` — a11ea78
+- [x] 1.4 `readAllPages` unit test proves multi-page stitching + short-page termination — a11ea78
 
 #### Manual
 
@@ -332,10 +332,10 @@ None — no schema, migration, RLS, or view changes.
 
 #### Automated
 
-- [ ] 2.1 Type checking passes: `npx astro check`
-- [ ] 2.2 Linting passes: `npm run lint`
-- [ ] 2.3 Unit tests pass: `npm test`
-- [ ] 2.4 `formatPoints` unit test covers null/0/positive
+- [x] 2.1 Type checking passes: `npx astro check`
+- [x] 2.2 Linting passes: `npm run lint`
+- [x] 2.3 Unit tests pass: `npm test`
+- [x] 2.4 `formatPoints` unit test covers null/0/positive
 
 #### Manual
 
