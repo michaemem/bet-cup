@@ -78,3 +78,70 @@ select
   now()
 from new_admin
 on conflict do nothing;
+
+-- Default E2E VIEWER participant ({{VIEWER_EMAIL}}). The non-admin identity the
+-- Playwright specs sign in as (E2E_PARTICIPANT_*, default alice) — without it the
+-- `setup` project cannot authenticate. Same auth.users + auth.identities shape as
+-- the admin above, but it gets ONLY the participant role: app.admin_email is still
+-- the ADMIN_EMAIL set above and this email never matches, so handle_new_user does
+-- not promote it. on conflict do nothing keeps reseeds idempotent.
+with new_viewer as (
+  insert into auth.users (
+    instance_id,
+    id,
+    aud,
+    role,
+    email,
+    encrypted_password,
+    email_confirmed_at,
+    recovery_sent_at,
+    last_sign_in_at,
+    raw_app_meta_data,
+    raw_user_meta_data,
+    created_at,
+    updated_at,
+    confirmation_token,
+    email_change,
+    email_change_token_new,
+    recovery_token
+  ) values (
+    '00000000-0000-0000-0000-000000000000',
+    gen_random_uuid(),
+    'authenticated',
+    'authenticated',
+    '{{VIEWER_EMAIL}}',
+    crypt('{{VIEWER_PASSWORD}}', gen_salt('bf', 10)),
+    now(),
+    now(),
+    now(),
+    '{"provider":"email","providers":["email"]}',
+    jsonb_build_object('display_name', '{{VIEWER_DISPLAY_NAME}}'),
+    now(),
+    now(),
+    '',
+    '',
+    '',
+    ''
+  )
+  on conflict do nothing
+  returning id, email
+)
+insert into auth.identities (
+  provider_id,
+  user_id,
+  identity_data,
+  provider,
+  last_sign_in_at,
+  created_at,
+  updated_at
+)
+select
+  id::text,
+  id,
+  jsonb_build_object('sub', id::text, 'email', email, 'email_verified', true, 'phone_verified', false),
+  'email',
+  now(),
+  now(),
+  now()
+from new_viewer
+on conflict do nothing;

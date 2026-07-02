@@ -6,7 +6,10 @@
 >
 > Refresh: re-run `/10x-test-plan --refresh` when stale (see §8).
 >
-> Last updated: 2026-06-18 (Phase 3 complete — action-layer + boundary write-flip)
+> Last updated: 2026-06-24 (Phase 4 e2e bootstrapped: Playwright installed, the
+> first browser-level test `tests/e2e/prediction-blindness.spec.ts` (Risk #1)
+> landed + the `e2e` CI job; default viewer `alice` now seeded by the committed
+> seed. Earlier: Risk #8 + the E2E seed exemplar `tests/e2e/seed.spec.ts`.)
 
 ## 1. Strategy
 
@@ -39,15 +42,16 @@ terms, not test names. The Source column cites the _evidence that surfaced
 this risk_ — never a specific file as "where the failure lives" (that is
 research's job, see §1 principle #3).
 
-| #   | Risk (failure scenario)                                                                                              | Impact | Likelihood | Source (evidence — not anchor)                                                                             |
-| --- | -------------------------------------------------------------------------------------------------------------------- | ------ | ---------- | ---------------------------------------------------------------------------------------------------------- |
-| 1   | A participant's (or the admin's) prediction is visible to anyone else before that match's kickoff                    | High   | High       | PRD FR-015 + Success-Criteria integrity invariant; interview Q1, Q3; hot-spot dir `src/db` (6 commits/30d) |
-| 2   | Points are computed wrong for a (prediction, result) pair, or a result correction fails to recompute affected scores | High   | High       | PRD FR-018 / FR-010 + Success-Criteria scoring guardrail; interview Q4; roadmap S-04 (next slice)          |
-| 3   | One participant creates, edits, or deletes another participant's prediction (ownership / IDOR)                       | High   | High       | PRD FR-013 / FR-015; interview Q1, Q3; hot-spot dir `src/actions` (5 commits/30d), `src/db`                |
-| 4   | A prediction is created or edited after its match's kickoff (kickoff-lock bypass)                                    | High   | Medium     | PRD FR-014; hot-spot dir `src/lib` (14 commits/30d); interview Q1                                          |
-| 5   | The service-role client or a misscoped server action bypasses RLS and exposes predictions                            | High   | Medium     | roadmap S-01 risk note; AGENTS.md service-role guard; lessons.md                                           |
-| 6   | RLS / migration verified locally behaves differently against the deployed DB (silent leak or regression in prod)     | High   | Medium     | interview Q2; AGENTS.md deploy / migration notes                                                           |
-| 7   | The leaderboard ranks participants wrongly — wrong totals or wrong tie-break order                                   | Medium | Medium     | PRD FR-020; roadmap S-04                                                                                   |
+| #   | Risk (failure scenario)                                                                                                                   | Impact | Likelihood | Source (evidence — not anchor)                                                                                  |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------ | ---------- | --------------------------------------------------------------------------------------------------------------- |
+| 1   | A participant's (or the admin's) prediction is visible to anyone else before that match's kickoff                                         | High   | High       | PRD FR-015 + Success-Criteria integrity invariant; interview Q1, Q3; hot-spot dir `src/db` (6 commits/30d)      |
+| 2   | Points are computed wrong for a (prediction, result) pair, or a result correction fails to recompute affected scores                      | High   | High       | PRD FR-018 / FR-010 + Success-Criteria scoring guardrail; interview Q4; roadmap S-04 (next slice)               |
+| 3   | One participant creates, edits, or deletes another participant's prediction (ownership / IDOR)                                            | High   | High       | PRD FR-013 / FR-015; interview Q1, Q3; hot-spot dir `src/actions` (5 commits/30d), `src/db`                     |
+| 4   | A prediction is created or edited after its match's kickoff (kickoff-lock bypass)                                                         | High   | Medium     | PRD FR-014; hot-spot dir `src/lib` (14 commits/30d); interview Q1                                               |
+| 5   | The service-role client or a misscoped server action bypasses RLS and exposes predictions                                                 | High   | Medium     | roadmap S-01 risk note; AGENTS.md service-role guard; lessons.md                                                |
+| 6   | RLS / migration verified locally behaves differently against the deployed DB (silent leak or regression in prod)                          | High   | Medium     | interview Q2; AGENTS.md deploy / migration notes                                                                |
+| 7   | The leaderboard ranks participants wrongly — wrong totals or wrong tie-break order                                                        | Medium | Medium     | PRD FR-020; roadmap S-04                                                                                        |
+| 8   | A participant's saved prediction is lost or shown stale after a page reload / navigation (the score doesn't survive a real SSR re-render) | Medium | Low        | PRD predict flow; `PredictionForm` reload-on-success pattern; roadmap Phase 4 full-flow (predict→…→leaderboard) |
 
 **Impact × Likelihood rubric.** Both axes scored High / Medium / Low so two
 readers agree on the same row.
@@ -80,6 +84,7 @@ coverage.
 | #5   | Service-role usage is confined to participant creation and never reads predictions                                                                                                                                                                                             | "only one importer today" can silently stop being true                                                                                                                                                   | Which Supabase client each action uses and the service-role blast radius                                                                                                          | integration + isolation assertion                                                                        | grep-across-`src` false positives — assert production reads / importer count (per lessons.md)                                       |
 | #6   | RLS and scoring tests run against a real Postgres in CI, not only a dev machine                                                                                                                                                                                                | "passes locally" is not "safe in prod"                                                                                                                                                                   | How CI can stand up an ephemeral Supabase and which migrations gate deploy                                                                                                        | quality gate (CI) + pre-prod smoke                                                                       | a parity claim with no automated gate behind it                                                                                     |
 | #7   | Ranking follows total → exact-score count → alphabetical-by-name deterministically, including genuine tie cases                                                                                                                                                                | a stable sort is assumed; name tie-break must be case-insensitive                                                                                                                                        | Where ranking / tie-break is computed (SQL vs TS)                                                                                                                                 | unit (ranking fn) or DB-level                                                                            | a snapshot of one leaderboard with no actual ties exercised                                                                         |
+| #8   | A participant enters a score, and after a real page reload the SAME score is still rendered (persisted to the DB and re-read by the SSR surface), not lost or reset to the default                                                                                             | "the form said saved" is not "the row survives a reload"; the post-save in-memory state is not the SSR-re-read state                                                                                     | That `predictions.upsert` writes the row and `/predictions` re-queries it on every SSR render (no client-only cache masking a lost write)                                         | e2e (the only layer that exercises submit → real reload → SSR re-read end-to-end)                        | asserting the in-memory form value right after submit instead of re-reading after a real `page.reload()`; using `waitForTimeout`    |
 
 ## 3. Phased Rollout
 
@@ -110,15 +115,15 @@ parity gap from interview Q2.
 The classic test base for this project. AI-native tools (if any) carry a
 `checked:` date so future readers can see which lines need re-verification.
 
-| Layer                | Tool                       | Version | Notes                                                                                                            |
-| -------------------- | -------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------- |
-| unit + integration   | Vitest                     | ^4.1.7  | `npm test` = `vitest run`; `happy-dom` env; `@/*` alias mirrored; Astro virtual modules stubbed in `test/stubs/` |
-| coverage             | @vitest/coverage-v8        | ^4.1.7  | installed; not yet wired as a gate                                                                               |
-| DB / RLS             | Supabase CLI (local stack) | ^2.23.4 | `src/db/*.rls.test.ts` run against the local Supabase Postgres; require `npx supabase start`                     |
-| API mocking          | none yet                   | —       | actions exercised directly via stubs; revisit only if an external HTTP edge appears                              |
-| e2e                  | none yet — see Phase 4     | —       | candidate: cursor-ide-browser MCP / Playwright; add only if a failure mode needs the full deployed shape         |
-| accessibility        | none                       | —       | out of scope for the current rollout                                                                             |
-| (optional) AI-native | none yet                   | n/a     | no current need under cost × signal; revisit at `--refresh`                                                      |
+| Layer                | Tool                       | Version | Notes                                                                                                                                                                                                        |
+| -------------------- | -------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| unit + integration   | Vitest                     | ^4.1.7  | `npm test` = `vitest run`; `happy-dom` env; `@/*` alias mirrored; Astro virtual modules stubbed in `test/stubs/`                                                                                             |
+| coverage             | @vitest/coverage-v8        | ^4.1.7  | installed; not yet wired as a gate                                                                                                                                                                           |
+| DB / RLS             | Supabase CLI (local stack) | ^2.23.4 | `src/db/*.rls.test.ts` run against the local Supabase Postgres; require `npx supabase start`                                                                                                                 |
+| API mocking          | none yet                   | —       | actions exercised directly via stubs; revisit only if an external HTTP edge appears                                                                                                                          |
+| e2e                  | Playwright                 | ^1.61.1 | `npm run e2e`. `tests/e2e/*.spec.ts` drive the running SSR app (webServer = `npm run dev`); the `setup` project authenticates once and shares it via `storageState`. CI: the `e2e` job (non-gating for now). |
+| accessibility        | none                       | —       | out of scope for the current rollout                                                                                                                                                                         |
+| (optional) AI-native | none yet                   | n/a     | no current need under cost × signal; revisit at `--refresh`                                                                                                                                                  |
 
 **Stack grounding tools (current session):**
 
@@ -133,15 +138,16 @@ The full set of gates that must pass before a change reaches production.
 "Required for §3 Phase N" means the gate is enforced once that rollout phase
 lands; before that, the gate is `planned`.
 
-| Gate                       | Where                | Required?                          | Catches                                                  |
-| -------------------------- | -------------------- | ---------------------------------- | -------------------------------------------------------- |
-| lint + typecheck           | local + CI           | required (existing CI)             | syntactic / type drift                                   |
-| check:wrangler             | pre-commit + CI      | required (existing CI)             | removal of `nodejs_compat` flag that breaks Supabase SSR |
-| unit + integration         | local + CI           | required after §3 Phase 1          | scoring / ranking / logic regressions                    |
-| RLS tests vs real Postgres | CI                   | required (active since §3 Phase 2) | blindness / ownership / service-role leaks               |
-| e2e on the critical flow   | CI on PR             | planned — §3 Phase 4               | broken predict→result→leaderboard path                   |
-| pre-prod smoke             | between merge + prod | planned — §3 Phase 4               | local↔deployed-DB divergence (Risk #6)                   |
-| visual / snapshot          | —                    | excluded (see §7)                  | n/a                                                      |
+| Gate                       | Where                | Required?                          | Catches                                                       |
+| -------------------------- | -------------------- | ---------------------------------- | ------------------------------------------------------------- |
+| lint + typecheck           | local + CI           | required (existing CI)             | syntactic / type drift                                        |
+| check:wrangler             | pre-commit + CI      | required (existing CI)             | removal of `nodejs_compat` flag that breaks Supabase SSR      |
+| unit + integration         | local + CI           | required after §3 Phase 1          | scoring / ranking / logic regressions                         |
+| RLS tests vs real Postgres | CI                   | required (active since §3 Phase 2) | blindness / ownership / service-role leaks                    |
+| e2e: pre-kickoff blindness | CI on PR (`e2e` job) | added — non-gating (Risk #1)       | another participant's pre-kickoff pick rendered in `/history` |
+| e2e on the critical flow   | CI on PR             | planned — §3 Phase 4               | broken predict→result→leaderboard path                        |
+| pre-prod smoke             | between merge + prod | planned — §3 Phase 4               | local↔deployed-DB divergence (Risk #6)                        |
+| visual / snapshot          | —                    | excluded (see §7)                  | n/a                                                           |
 
 ## 6. Cookbook Patterns
 
@@ -241,7 +247,40 @@ password)` builder: sign in on a `@supabase/ssr` `createServerClient`
 
 ### 6.4 Adding an e2e test
 
-- TBD — see §3 Phase 4 (predict→kickoff→result→leaderboard happy path).
+- **Location**: project-level e2e dir, `tests/e2e/<feature>.spec.ts`, one test
+  per file. Config: `playwright.config.ts` (`baseURL`, `webServer = npm run dev`).
+- **Auth (don't drive the login form per test)**: the `setup` project
+  (`tests/e2e/auth.setup.ts`) signs in ONCE as `E2E_PARTICIPANT_*` and saves the
+  session to `storageState`; every spec reuses it and starts authenticated. The
+  setup fills the form behind a hydration-safe re-fill loop (the React island
+  resets controlled inputs on mount) and uses `getByLabel("Password", { exact:
+true })` to dodge the "Show password" toggle.
+- **Default viewer is seeded**: the committed seed
+  (`scripts/seed-template.mjs` → `supabase/seed.sql.template`) creates the
+  non-admin participant `alice` / `participant-only` (override via
+  `E2E_PARTICIPANT_*`), so a fresh `db:start` / `db:reset` / CI seed is runnable
+  with no manual user creation.
+- **Reference tests**:
+  - `tests/e2e/seed.spec.ts` — the seed EXEMPLAR (Risk #8: an own prediction
+    survives a real SSR reload). Demonstrates the five conventions: `getByRole`,
+    wait-for-state (the `Save`→`Update` flip) not wait-for-time, unique per-run
+    data, owner-scoped cleanup, and a risk-bound name. _What the seed shows is
+    what generated tests inherit_ — keep it clean. (Needs a future
+    `E2E_HOME_TEAM` vs `E2E_AWAY_TEAM` match seeded before it can join the CI lane.)
+  - `tests/e2e/prediction-blindness.spec.ts` — Risk #1 at the rendered layer:
+    a NON-owner participant (the seeded viewer) opens another participant's
+    `/history/[id]` and the owner's PRE-kickoff pick must be absent while the
+    POST-kickoff one is revealed. The owner is seeded only via the Supabase
+    client (never driven in the browser); the past match is created in the near
+    future, predicted, then its kickoff moved into the past (no service-role).
+    The tournament is reused if present, else created (portable to a bare CI DB).
+- **Run locally**: `npm run db:start` (+ `alice` from the seed), then `npm run
+e2e` (Playwright boots the app). Single spec: `npx playwright test <name>`.
+- **CI**: the `e2e` job (`.github/workflows/ci.yml`) seeds + boots a local
+  Supabase + the app and runs `prediction-blindness`. Non-gating for now;
+  promote to a `deploy.needs` gate once green across a few real runs.
+- **Full predict→kickoff→result→leaderboard happy path + CI gate**: TBD — see
+  §3 Phase 4.
 
 ### 6.5 Wiring a CI quality gate
 
@@ -252,6 +291,21 @@ password)` builder: sign in on a `@supabase/ssr` `createServerClient`
 
 (Filled in by `/10x-implement` as each phase lands.)
 
+- **Phase 4 (partial) — first browser-level E2E + CI rig (2026-06-24)** — added
+  `tests/e2e/prediction-blindness.spec.ts`, the first Risk #1 E2E at the layer
+  the integration suites can't reach: the rendered `/history/[participantId]`
+  page through real auth → routing → SSR → RLS → DB. A non-owner viewer must NOT
+  see the owner's pre-kickoff prediction but MUST see the post-kickoff one (same
+  page, so the blindness assertion can't pass on an empty render). Verified with
+  a deliberate break (relax `predictions_select` to `using (true)` → the
+  blindness assertion goes red). Anti-pattern dodged: the viewer is a non-owner
+  and the owner-as-VIEWER blindness facet stays at the RLS layer
+  (`predictions.rls.test.ts`). Rig changes: the committed seed now creates the
+  default `alice` viewer; `auth.setup.ts` got a hydration-safe re-fill + an
+  exact-match password locator (it had never run green); a non-gating `e2e` CI
+  job boots Supabase + the app and runs this spec. Does NOT cover the
+  predict→result→leaderboard happy path or gate deploy yet — that's the rest of
+  Phase 4. No production code or RLS policy changed.
 - **CI infra — pin Supabase CLI (2026-06-18, `ci-pin-supabase-cli`)** — the `rls`
   gate went red with `permission denied for table tournaments` in every suite's
   `beforeAll`. Root cause (reproduced locally, bisected on CLI version): the

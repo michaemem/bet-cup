@@ -14,6 +14,8 @@
     "check:wrangler": "node scripts/check-wrangler-compat.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
     "db:start": "node scripts/seed-template.mjs && npx supabase start",
     "db:stop": "npx supabase stop",
     "db:migration:new": "npx supabase migration new",
@@ -56,6 +58,7 @@
   "devDependencies": {
     "@eslint/compat": "^2.0.3",
     "@eslint/js": "^9.29.0",
+    "@playwright/test": "^1.61.1",
     "@types/papaparse": "^5.5.2",
     "@types/pg": "^8.20.0",
     "@vitest/coverage-v8": "^4.1.7",

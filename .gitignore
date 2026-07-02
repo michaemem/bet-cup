@@ -26,6 +26,12 @@ pnpm-debug.log*
 # generated supabase seed (template is committed; generated file is not)
 supabase/seed.sql
 
+# playwright: saved auth sessions (real tokens), reports, and CLI scratch
+playwright/.auth/
+playwright-report/
+test-results/
+.playwright-cli/
+
 # macOS-specific files
 .DS_Store
 

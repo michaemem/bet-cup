@@ -121,6 +121,54 @@ jobs:
       - name: Run live-DB RLS integration tests
         run: npm test -- rls
 
+  # Browser-level E2E gate. Boots a real local Supabase stack (migrations + seed,
+  # so the default `alice` viewer exists) and the Astro SSR app, then drives the
+  # Risk #1 blindness flow end-to-end (auth → routing → SSR → RLS → DB → DOM) —
+  # the rendered cross-participant surface the *.rls.test.ts suites can't reach.
+  # Not yet in `deploy.needs`: promote it to a deploy gate once it's proven green
+  # across a few real runs (this job has never executed in GitHub Actions).
+  e2e:
+    runs-on: ubuntu-latest
+    env:
+      ADMIN_EMAIL: admin@betcup.local
+      ADMIN_PASSWORD: local-only
+      E2E_PARTICIPANT_USERNAME: alice
+      E2E_PARTICIPANT_PASSWORD: participant-only
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx astro sync
+      - uses: supabase/setup-cli@v1
+        with:
+          # Same pin + rationale as the `rls` job: 2.98.2 uses the legacy HS256
+          # signing keys the authenticated Supabase clients in these tests rely on.
+          version: 2.98.2
+      - name: Generate local seed (admin + default e2e viewer) from the template
+        run: node scripts/seed-template.mjs
+      - name: Start Supabase (applies migrations + seed)
+        run: supabase start
+      - name: Export Supabase connection env (both the app and the specs read these)
+        # auth.anon_key → SUPABASE_KEY: createClient() in the app and the spec both
+        # read SUPABASE_URL / SUPABASE_KEY. Strip the shell-quoting supabase emits.
+        run: |
+          supabase status -o env \
+            --override-name api.url=SUPABASE_URL \
+            --override-name auth.anon_key=SUPABASE_KEY | sed 's/"//g' >> "$GITHUB_ENV"
+      - name: Materialize .dev.vars so `astro dev` (the Playwright webServer) targets local Supabase
+        run: |
+          cat > .dev.vars <<EOF
+          SUPABASE_URL=$SUPABASE_URL
+          SUPABASE_KEY=$SUPABASE_KEY
+          EOF
+      - name: Install the Playwright browser
+        run: npx playwright install --with-deps chromium
+      - name: Run the Risk #1 blindness E2E (Playwright boots the app via webServer)
+        run: npx playwright test prediction-blindness
+
   deploy:
     needs: [ci, smoke, rls]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
