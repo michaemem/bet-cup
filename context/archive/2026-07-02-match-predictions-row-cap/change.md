@@ -1,10 +1,10 @@
 ---
 change_id: match-predictions-row-cap
 title: Fix others' predictions points showing 0 due to Supabase 1000-row query cap
-status: impl_reviewed
+status: archived
 created: 2026-07-02
 updated: 2026-07-02
-archived_at: null
+archived_at: 2026-07-02T09:52:47Z
 ---
 
 ## Notes
