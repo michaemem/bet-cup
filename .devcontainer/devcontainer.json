@@ -1,0 +1,76 @@
+{
+  "name": "BetCup",
+  // Node 22 toolchain (matches .nvmrc / engines: >=22.14.0 <23). npm, git and
+  // common CLI tooling are preinstalled.
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:22",
+
+  // The local database IS the Supabase stack, which the Supabase CLI runs as a
+  // set of Docker containers. docker-in-docker gives this container its own
+  // Docker daemon so `npx supabase start` publishes Postgres/API/Studio on the
+  // container's OWN localhost — exactly where the app and tests expect them
+  // (SUPABASE_URL=http://127.0.0.1:54321). The feature runs the container
+  // privileged automatically.
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      // Install upstream Docker CE, not Moby: the base image is now Debian 13
+      // "trixie", for which the Moby (moby-cli/moby-engine) packages aren't
+      // published — moby:true fails the build on this image.
+      "moby": false
+    },
+    // GitHub CLI (`gh`) for auth, PRs, issues, etc.
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+
+  // Expose the host's SSH keys and Git identity (read-only) so `git` inside the
+  // container can push/pull over SSH and author commits as you. post-create.sh
+  // copies them into ~/.ssh (with strict perms) and ~/.gitconfig — a copy, not
+  // the live mount, so the container can update known_hosts without touching
+  // the host files.
+  "mounts": [
+    "source=${localEnv:HOME}/.ssh,target=/home/node/.ssh-host,type=bind,readonly",
+    "source=${localEnv:HOME}/.gitconfig,target=/home/node/.gitconfig-host,type=bind,readonly"
+  ],
+
+  // Supabase is memory hungry (~7 GB). This is a hint, not a hard limit.
+  "hostRequirements": {
+    "memory": "8gb"
+  },
+
+  // 4321  Astro dev server (npm run dev)
+  // 54321 Supabase API/auth gateway (SUPABASE_URL)
+  // 54322 Supabase Postgres (SUPABASE_DB_URL for RLS tests)
+  // 54323 Supabase Studio (web UI)
+  // 54324 Inbucket — captured local emails
+  "forwardPorts": [4321, 54321, 54322, 54323, 54324],
+  "portsAttributes": {
+    "4321": { "label": "Astro dev", "onAutoForward": "notify" },
+    "54321": { "label": "Supabase API", "onAutoForward": "silent" },
+    "54322": { "label": "Supabase DB", "onAutoForward": "silent" },
+    "54323": { "label": "Supabase Studio", "onAutoForward": "silent" },
+    "54324": { "label": "Inbucket (email)", "onAutoForward": "silent" }
+  },
+
+  // Installs npm deps, seeds .env/.dev.vars, and installs the Playwright browser
+  // + its system libs. Runs once after the container is created.
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+
+  "remoteUser": "node",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "astro-build.astro-vscode",
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "christian-kohler.path-intellisense",
+        "ms-playwright.playwright"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact", "astro"]
+      }
+    }
+  }
+}
