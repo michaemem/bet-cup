@@ -332,10 +332,10 @@ None — no schema, migration, RLS, or view changes.
 
 #### Automated
 
-- [x] 2.1 Type checking passes: `npx astro check`
-- [x] 2.2 Linting passes: `npm run lint`
-- [x] 2.3 Unit tests pass: `npm test`
-- [x] 2.4 `formatPoints` unit test covers null/0/positive
+- [x] 2.1 Type checking passes: `npx astro check` — f3afe12
+- [x] 2.2 Linting passes: `npm run lint` — f3afe12
+- [x] 2.3 Unit tests pass: `npm test` — f3afe12
+- [x] 2.4 `formatPoints` unit test covers null/0/positive — f3afe12
 
 #### Manual
 
@@ -345,8 +345,8 @@ None — no schema, migration, RLS, or view changes.
 
 #### Automated
 
-- [ ] 3.1 Linting passes: `npm run lint`
-- [ ] 3.2 Default `npm test` passes and skips live-DB suite without DB env
+- [x] 3.1 Linting passes: `npm run lint`
+- [x] 3.2 Default `npm test` passes and skips live-DB suite without DB env
 - [ ] 3.3 Over-cap live-DB test passes with local Supabase + env set
 
 #### Manual
