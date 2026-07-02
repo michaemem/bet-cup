@@ -1,0 +1,88 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Supabase: Start + sync env",
+      "detail": "Boot the local Supabase stack and write its keys into .env/.dev.vars",
+      "type": "shell",
+      "command": "bash .devcontainer/supabase-up.sh",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "Supabase: Stop",
+      "detail": "Stop the local Supabase stack",
+      "type": "shell",
+      "command": "npm run db:stop",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "Supabase: Reset",
+      "detail": "Re-template the seed and reset the local DB to migrations + seed",
+      "type": "shell",
+      "command": "npm run db:reset",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "Dev server",
+      "detail": "npm run dev — Astro SSR on http://localhost:4321",
+      "type": "shell",
+      "command": "npm run dev",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "astro",
+        "pattern": [{ "regexp": ".", "file": 1, "location": 2, "message": 3 }],
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*(astro|vite).*",
+          "endsPattern": ".*(ready|Local:|localhost:4321).*"
+        }
+      },
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "Test: unit",
+      "detail": "npm test — Vitest run (no DB needed)",
+      "type": "shell",
+      "command": "npm test",
+      "group": { "kind": "test", "isDefault": true },
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "Test: unit (watch)",
+      "detail": "npm run test:watch — Vitest watch mode",
+      "type": "shell",
+      "command": "npm run test:watch",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "Test: RLS (live DB)",
+      "detail": "Load .env then run the live-DB RLS integration tests",
+      "type": "shell",
+      "command": "set -a; . ./.env; set +a; npm test -- rls",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "Test: e2e",
+      "detail": "npm run e2e — Playwright (needs DB + dev server)",
+      "type": "shell",
+      "command": "npm run e2e",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "Test: e2e (UI)",
+      "detail": "npm run e2e:ui — Playwright interactive UI runner",
+      "type": "shell",
+      "command": "npm run e2e:ui",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    }
+  ]
+}

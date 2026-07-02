@@ -18,6 +18,44 @@ A modern, opinionated starter template for building fast, accessible web applica
 - Node.js v22.14.0 (as specified in `.nvmrc`)
 - npm (comes with Node.js)
 
+> Prefer a zero-setup, containerized environment? See [Dev Container](#dev-container) — it provisions Node, the Supabase stack, and the test tooling for you.
+
+## Dev Container
+
+A ready-to-use [Dev Container](https://containers.dev/) lives in `.devcontainer/`. It runs the app, the local Supabase database, and the test suites entirely inside a container — no local Node/Supabase setup required beyond Docker.
+
+Because the local database _is_ the Supabase stack (which the Supabase CLI runs as Docker containers), the dev container uses the **docker-in-docker** feature so `npx supabase start` publishes Postgres/API/Studio on the container's own `localhost`, exactly where the app expects them.
+
+### Prerequisites
+
+- Docker with ~8 GB RAM available to it (Supabase is memory hungry).
+- VS Code / Cursor with the Dev Containers extension (or any `devcontainer`-compatible tool).
+
+### Usage
+
+1. Open the repo in the dev container ("Reopen in Container"). On first create it installs npm deps, scaffolds `.env`/`.dev.vars`, and installs the Playwright browser.
+2. Start the database and sync its generated keys into `.env` / `.dev.vars`:
+
+```bash
+bash .devcontainer/supabase-up.sh
+```
+
+3. Run what you need:
+
+```bash
+npm run dev        # dev server → http://localhost:4321 (forwarded to the host)
+npm test           # unit tests (Vitest — no DB needed)
+npm run e2e        # end-to-end tests (needs the DB from step 2)
+```
+
+Forwarded ports: `4321` (app), `54321` (Supabase API), `54322` (Postgres), `54323` (Studio), `54324` (Inbucket email UI).
+
+The live-DB RLS integration tests self-skip unless their env vars are present; `supabase-up.sh` writes them into `.env`, so run them with:
+
+```bash
+set -a; . ./.env; set +a; npm test -- rls
+```
+
 ## Getting Started
 
 1. Clone the repository:
@@ -165,12 +203,12 @@ SUPABASE_KEY=<anon-key>
 
 ### Auth routes
 
-| Route                | Description                                                             |
-| -------------------- | ----------------------------------------------------------------------- |
-| `/auth/signin`       | Email/password sign-in form                                             |
-| `/dashboard`         | Example protected page (redirects to `/auth/signin` if unauthenticated) |
-| `/api/auth/signin`   | Sign-in handler (`POST`)                                                |
-| `/api/auth/signout`  | Sign-out handler (`POST`)                                               |
+| Route               | Description                                                             |
+| ------------------- | ----------------------------------------------------------------------- |
+| `/auth/signin`      | Email/password sign-in form                                             |
+| `/dashboard`        | Example protected page (redirects to `/auth/signin` if unauthenticated) |
+| `/api/auth/signin`  | Sign-in handler (`POST`)                                                |
+| `/api/auth/signout` | Sign-out handler (`POST`)                                               |
 
 Route protection is handled in `src/middleware.ts`, which is default-deny: every route except those in the `PUBLIC_ROUTES` array requires authentication.
 
@@ -206,12 +244,12 @@ GitHub Actions runs `lint` + `check:wrangler` + `build` on every push and PR to 
 
 Required GitHub repository secrets:
 
-| Secret | Used by | Source |
-| --- | --- | --- |
-| `SUPABASE_URL` | build step | Supabase dashboard → Settings → API → Project URL |
-| `SUPABASE_KEY` | build step | Supabase dashboard → Settings → API → `anon` public key |
-| `CLOUDFLARE_API_TOKEN` | deploy step | Cloudflare dash → My Profile → API Tokens → "Edit Cloudflare Workers" template |
-| `CLOUDFLARE_ACCOUNT_ID` | deploy step | Cloudflare dash → any Worker → right sidebar |
+| Secret                  | Used by     | Source                                                                         |
+| ----------------------- | ----------- | ------------------------------------------------------------------------------ |
+| `SUPABASE_URL`          | build step  | Supabase dashboard → Settings → API → Project URL                              |
+| `SUPABASE_KEY`          | build step  | Supabase dashboard → Settings → API → `anon` public key                        |
+| `CLOUDFLARE_API_TOKEN`  | deploy step | Cloudflare dash → My Profile → API Tokens → "Edit Cloudflare Workers" template |
+| `CLOUDFLARE_ACCOUNT_ID` | deploy step | Cloudflare dash → any Worker → right sidebar                                   |
 
 ## License
 
