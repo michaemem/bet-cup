@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/db/database.types";
+import { readAllPages } from "@/lib/paginate";
 
 // Per-match "See others' predictions" assembly (extends S-05). Mirrors
 // `src/lib/history.ts` but pivots on match → participants instead of
@@ -61,6 +62,16 @@ export interface BuildMatchPredictionsInput {
 
 function compositeKey(matchId: string, predictorId: string): string {
   return `${matchId}::${predictorId}`;
+}
+
+/**
+ * Format a participant's points for display, keeping "no score" distinct from
+ * "scored zero". `null` (no score row — e.g. locked-no-result, or a data gap)
+ * renders as an em dash so a genuinely-missing value can never masquerade as a
+ * legitimate `0`; a real number renders as `N pts` (including `0 pts`).
+ */
+export function formatPoints(points: number | null): string {
+  return points === null ? "—" : `${String(points)} pts`;
 }
 
 /**
@@ -142,23 +153,47 @@ export async function loadMatchPredictions(
     .select("participant_id, display_name");
   if (rosterError) throw new Error("match-predictions: failed to load leaderboard", { cause: rosterError });
 
-  const { data: predictions, error: predictionsError } = await supabase
-    .from("predictions")
-    .select("match_id, predictor_id, home_goals, away_goals")
-    .in("match_id", kickedOffMatchIds);
-  if (predictionsError) throw new Error("match-predictions: failed to load predictions", { cause: predictionsError });
+  // Paged: this read fans out to participants x kicked-off matches, which
+  // crosses PostgREST's max_rows cap in a large tournament. `.order()` on the
+  // unique (match_id, predictor_id) key gives stable page boundaries.
+  let predictions;
+  try {
+    predictions = await readAllPages((from, to) =>
+      supabase
+        .from("predictions")
+        .select("match_id, predictor_id, home_goals, away_goals")
+        .in("match_id", kickedOffMatchIds)
+        .order("match_id")
+        .order("predictor_id")
+        .range(from, to),
+    );
+  } catch (error) {
+    throw new Error("match-predictions: failed to load predictions", { cause: error });
+  }
 
+  // One row per match (unique match_id) — bounded by match count, so a single
+  // read is safe.
   const { data: results, error: resultsError } = await supabase
     .from("match_results")
     .select("match_id, home_score, away_score")
     .in("match_id", kickedOffMatchIds);
   if (resultsError) throw new Error("match-predictions: failed to load match_results", { cause: resultsError });
 
-  const { data: scores, error: scoresError } = await supabase
-    .from("prediction_scores")
-    .select("match_id, predictor_id, points")
-    .in("match_id", kickedOffMatchIds);
-  if (scoresError) throw new Error("match-predictions: failed to load prediction_scores", { cause: scoresError });
+  // Paged: same fan-out as predictions (one row per scored prediction).
+  let scores;
+  try {
+    scores = await readAllPages((from, to) =>
+      supabase
+        .from("prediction_scores")
+        .select("match_id, predictor_id, points")
+        .in("match_id", kickedOffMatchIds)
+        .order("match_id")
+        .order("predictor_id")
+        .range(from, to),
+    );
+  } catch (error) {
+    throw new Error("match-predictions: failed to load prediction_scores", { cause: error });
+  }
 
   // View columns are nullable in the generated types; coerce/drop to reach the
   // non-null builder shapes (mirror of leaderboard/index.astro + history.ts).

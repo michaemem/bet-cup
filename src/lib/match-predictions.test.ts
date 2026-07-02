@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildMatchPredictionRows, type BuildMatchPredictionsInput } from "@/lib/match-predictions";
+import { buildMatchPredictionRows, formatPoints, type BuildMatchPredictionsInput } from "@/lib/match-predictions";
 
 // Pure unit test for the per-match merge rules: roster (leaderboard) ordering,
 // the "—"/null placeholder for non-predictors, isSelf marking, points sourced
@@ -98,5 +98,19 @@ describe("buildMatchPredictionRows", () => {
   it("returns an empty map when no match has kicked off", () => {
     const views = buildMatchPredictionRows({ ...baseInput(), kickedOffMatchIds: [] });
     expect(views.size).toBe(0);
+  });
+});
+
+describe("formatPoints", () => {
+  it("renders null (no score) as an em dash, not a fake zero", () => {
+    expect(formatPoints(null)).toBe("—");
+  });
+
+  it("renders a real zero as 0 pts", () => {
+    expect(formatPoints(0)).toBe("0 pts");
+  });
+
+  it("renders a positive score as N pts", () => {
+    expect(formatPoints(5)).toBe("5 pts");
   });
 });

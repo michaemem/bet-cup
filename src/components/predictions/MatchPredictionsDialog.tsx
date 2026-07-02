@@ -7,7 +7,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import type { MatchPredictionParticipantRow } from "@/lib/match-predictions";
+import { formatPoints, type MatchPredictionParticipantRow } from "@/lib/match-predictions";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -60,7 +60,7 @@ export function MatchPredictionsDialog({ homeTeam, awayTeam, result, participant
               <span className="flex shrink-0 items-center gap-4 tabular-nums">
                 <span>{formatScore(participant.prediction)}</span>
                 {showPoints && (
-                  <span className="text-muted-foreground w-12 text-right">{participant.points ?? 0} pts</span>
+                  <span className="text-muted-foreground w-12 text-right">{formatPoints(participant.points)}</span>
                 )}
               </span>
             </li>

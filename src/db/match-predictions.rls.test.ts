@@ -55,6 +55,29 @@ async function signedInClient(email: string, password: string): Promise<Supabase
   return client;
 }
 
+// This suite SEEDS and DELETES data (and the over-cap block bulk-inserts ~2100
+// rows + auth users), so it must only ever touch a LOCAL stack. Refuse a
+// non-loopback target even when creds are present, so a stray prod
+// SUPABASE_URL/SUPABASE_DB_URL can never seed a real database.
+const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "::1"]);
+
+function isLoopbackHost(rawUrl: string): boolean {
+  try {
+    return LOOPBACK_HOSTS.has(new URL(rawUrl).hostname);
+  } catch {
+    return false;
+  }
+}
+
+function assertLoopbackTarget(): void {
+  if (!isLoopbackHost(SUPABASE_URL) || !isLoopbackHost(process.env.SUPABASE_DB_URL ?? "")) {
+    throw new Error(
+      "match-predictions.rls: refusing to seed a non-loopback target — this suite is local-only. " +
+        "Point SUPABASE_URL and SUPABASE_DB_URL at 127.0.0.1/localhost.",
+    );
+  }
+}
+
 describe.skipIf(!dbConfigured)("match-predictions read path — reveal + ordering (live DB)", () => {
   let service: SupabaseClient<Database>;
   let admin: SupabaseClient<Database>;
@@ -100,6 +123,7 @@ describe.skipIf(!dbConfigured)("match-predictions read path — reveal + orderin
   }
 
   beforeAll(async () => {
+    assertLoopbackTarget();
     service = freshClient(SERVICE_ROLE_KEY);
 
     aUserId = await createParticipant("a-viewer");
@@ -215,5 +239,122 @@ describe.skipIf(!dbConfigured)("match-predictions read path — reveal + orderin
 
     expect(error).toBeNull();
     expect(data ?? []).toHaveLength(0);
+  });
+});
+
+/**
+ * Regression guard for the row-cap truncation bug (change:
+ * match-predictions-row-cap). `loadMatchPredictions` fans out its predictions +
+ * prediction_scores reads to `participants x kicked-off matches` rows; without
+ * pagination PostgREST silently truncates them at `max_rows` (1000, see
+ * supabase/config.toml), dropping score rows so the dialog shows a fake 0.
+ *
+ * This seeds a dataset that DELIBERATELY exceeds 1000 prediction/score rows and
+ * asserts every seeded participant's points survive across every seeded match.
+ * Against the pre-fix loader this fails (truncated cells come back null/0);
+ * against the paged loader it passes. Kept in its own suite so the heavier seed
+ * only runs for this check. Self-skips without DB env, like the suite above.
+ */
+describe.skipIf(!dbConfigured)("match-predictions read path — over the row cap (live DB)", () => {
+  // 6 x 175 = 1050 (predictions) and 1050 (scores) rows — both clear the 1000
+  // cap with margin while keeping auth-user creation (the slow part) small.
+  const N_PARTICIPANTS = 6;
+  const N_MATCHES = 175;
+  const EXPECTED_CELLS = N_PARTICIPANTS * N_MATCHES;
+
+  let service: SupabaseClient<Database>;
+  let viewer: SupabaseClient<Database>;
+  let viewerId: string;
+  let tournamentId: string;
+  const participantIds: string[] = [];
+  const userIds: string[] = [];
+  const matchIds: string[] = [];
+
+  beforeAll(async () => {
+    assertLoopbackTarget();
+    service = freshClient(SERVICE_ROLE_KEY);
+
+    // Participants (real auth users → profiles via the signup trigger).
+    for (let i = 0; i < N_PARTICIPANTS; i++) {
+      const email = `rls-mpred-cap-${String(i)}-${STAMP}@betcup.local`;
+      const { data, error } = await service.auth.admin.createUser({
+        email,
+        password: PARTICIPANT_PASSWORD,
+        email_confirm: true,
+        user_metadata: { display_name: `cap-${String(i)}` },
+      });
+      if (error) throw new Error(`create cap participant ${String(i)} failed: ${error.message}`);
+      userIds.push(data.user.id);
+      participantIds.push(data.user.id);
+    }
+    viewerId = participantIds[0];
+    viewer = await signedInClient(`rls-mpred-cap-0-${STAMP}@betcup.local`, PARTICIPANT_PASSWORD);
+
+    // Tournament + N_MATCHES kicked-off (past) matches, seeded via service-role
+    // (bypasses RLS — pure fixture setup, not the code under test).
+    const tour = await service
+      .from("tournaments")
+      .insert({ name: `Row-Cap RLS Cup ${STAMP}`, time_zone: ZONE })
+      .select("id")
+      .single();
+    if (tour.error) throw new Error(`tournament insert failed: ${tour.error.message}`);
+    tournamentId = tour.data.id;
+
+    const base = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    const matchRows = Array.from({ length: N_MATCHES }, (_, i) => ({
+      tournament_id: tournamentId,
+      home_team: `Home ${String(i)}`,
+      away_team: `Away ${String(i)}`,
+      // All comfortably in the past → kicked off → predictions revealed + scorable.
+      kickoff_time: new Date(base + i * 60 * 1000).toISOString(),
+    }));
+    const inserted = await service.from("matches").insert(matchRows).select("id");
+    if (inserted.error) throw new Error(`bulk match insert failed: ${inserted.error.message}`);
+    for (const row of inserted.data) matchIds.push(row.id);
+
+    // Every participant predicts every match EXACTLY right (1–0), and every match
+    // resolves 1–0 → every cell scores the exact-match points (> 0). So any
+    // null/0 cell in the assert means a row was dropped by truncation.
+    const predictionRows = participantIds.flatMap((pid) =>
+      matchIds.map((mid) => ({ predictor_id: pid, match_id: mid, home_goals: 1, away_goals: 0 })),
+    );
+    const predIns = await service.from("predictions").insert(predictionRows);
+    if (predIns.error) throw new Error(`bulk prediction insert failed: ${predIns.error.message}`);
+
+    const resultRows = matchIds.map((mid) => ({ match_id: mid, home_score: 1, away_score: 0 }));
+    const resIns = await service.from("match_results").insert(resultRows);
+    if (resIns.error) throw new Error(`bulk result insert failed: ${resIns.error.message}`);
+  });
+
+  afterAll(async () => {
+    if (tournamentId) await service.from("tournaments").delete().eq("id", tournamentId);
+    for (const id of userIds) await service.auth.admin.deleteUser(id);
+  });
+
+  it("returns every participant's points for every match past the 1000-row cap", async () => {
+    // Sanity: the seed genuinely exceeds the cap, otherwise the guard is vacuous.
+    expect(EXPECTED_CELLS).toBeGreaterThan(1000);
+
+    const views = await loadMatchPredictions(viewer, viewerId, matchIds);
+    expect(views.size).toBe(N_MATCHES);
+
+    let checkedCells = 0;
+    let missingCells = 0;
+    for (const mid of matchIds) {
+      const view = views.get(mid);
+      expect(view).toBeDefined();
+      for (const pid of participantIds) {
+        const row = view?.participants.find((p) => p.participantId === pid);
+        // An exact 1–0 prediction against a 1–0 result always scores > 0; a
+        // truncated cell would surface as null (or a 0 from the no-prediction
+        // branch) — either way it is caught here.
+        const points = row?.points ?? null;
+        if (points === null || points <= 0) missingCells++;
+        checkedCells++;
+      }
+    }
+
+    expect(checkedCells).toBe(EXPECTED_CELLS);
+    expect(missingCells).toBe(0);
   });
 });

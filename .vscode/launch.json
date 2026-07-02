@@ -6,6 +6,26 @@
       "name": "Development server",
       "request": "launch",
       "type": "node-terminal"
+    },
+    {
+      "name": "Dev server (start DB first)",
+      "request": "launch",
+      "type": "node-terminal",
+      "command": "npm run dev",
+      "preLaunchTask": "Supabase: Start + sync env"
+    },
+    {
+      "name": "Vitest: unit tests",
+      "request": "launch",
+      "type": "node-terminal",
+      "command": "npm test"
+    },
+    {
+      "name": "Playwright: e2e",
+      "request": "launch",
+      "type": "node-terminal",
+      "command": "npm run e2e",
+      "preLaunchTask": "Supabase: Start + sync env"
     }
   ]
 }
