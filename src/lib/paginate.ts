@@ -15,6 +15,9 @@
 // query has a stable total order. Callers MUST apply a deterministic `.order()`
 // (e.g. a unique key) on the query they page here.
 
+// Must stay <= PostgREST `max_rows` (supabase/config.toml). If this exceeds the
+// server cap, a full page comes back short and the loop stops early — silently
+// re-truncating. Keep the two in lockstep.
 export const DEFAULT_PAGE_SIZE = 1000;
 
 export interface PageResult<T> {
@@ -31,6 +34,12 @@ export interface PageResult<T> {
  * must be `<= db-max-rows`, otherwise the server truncates a full window and the
  * "short page ⇒ done" signal never fires. Throws (with `cause`) on the first
  * page error.
+ *
+ * CAVEAT: callers MUST NOT pass `{ count: 'exact' }` on the paged query. When the
+ * total is an exact multiple of `pageSize` this loop issues one final
+ * out-of-range request expecting an empty `200 []`; with an exact count PostgREST
+ * answers an out-of-range offset with `416 Range Not Satisfiable`, which this
+ * helper would surface as a thrown error instead of end-of-data.
  */
 export async function readAllPages<T>(
   fetchPage: (from: number, to: number) => PromiseLike<PageResult<T>>,

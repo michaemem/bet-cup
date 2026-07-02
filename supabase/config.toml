@@ -15,6 +15,9 @@ schemas = ["public", "graphql_public"]
 extra_search_path = ["public", "extensions"]
 # The maximum number of rows returns from a view, table, or stored procedure. Limits payload size
 # for accidental or malicious requests.
+# COUPLING: src/lib/paginate.ts `DEFAULT_PAGE_SIZE` must stay <= this value.
+# readAllPages() stops on a page shorter than the page size, so a max_rows below
+# the page size would silently re-truncate the paginated reads (the row-cap bug).
 max_rows = 1000
 
 [api.tls]

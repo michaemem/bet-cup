@@ -55,6 +55,29 @@ async function signedInClient(email: string, password: string): Promise<Supabase
   return client;
 }
 
+// This suite SEEDS and DELETES data (and the over-cap block bulk-inserts ~2100
+// rows + auth users), so it must only ever touch a LOCAL stack. Refuse a
+// non-loopback target even when creds are present, so a stray prod
+// SUPABASE_URL/SUPABASE_DB_URL can never seed a real database.
+const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "::1"]);
+
+function isLoopbackHost(rawUrl: string): boolean {
+  try {
+    return LOOPBACK_HOSTS.has(new URL(rawUrl).hostname);
+  } catch {
+    return false;
+  }
+}
+
+function assertLoopbackTarget(): void {
+  if (!isLoopbackHost(SUPABASE_URL) || !isLoopbackHost(process.env.SUPABASE_DB_URL ?? "")) {
+    throw new Error(
+      "match-predictions.rls: refusing to seed a non-loopback target — this suite is local-only. " +
+        "Point SUPABASE_URL and SUPABASE_DB_URL at 127.0.0.1/localhost.",
+    );
+  }
+}
+
 describe.skipIf(!dbConfigured)("match-predictions read path — reveal + ordering (live DB)", () => {
   let service: SupabaseClient<Database>;
   let admin: SupabaseClient<Database>;
@@ -100,6 +123,7 @@ describe.skipIf(!dbConfigured)("match-predictions read path — reveal + orderin
   }
 
   beforeAll(async () => {
+    assertLoopbackTarget();
     service = freshClient(SERVICE_ROLE_KEY);
 
     aUserId = await createParticipant("a-viewer");
@@ -247,6 +271,7 @@ describe.skipIf(!dbConfigured)("match-predictions read path — over the row cap
   const matchIds: string[] = [];
 
   beforeAll(async () => {
+    assertLoopbackTarget();
     service = freshClient(SERVICE_ROLE_KEY);
 
     // Participants (real auth users → profiles via the signup trigger).
